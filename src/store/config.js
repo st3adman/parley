@@ -16,6 +16,8 @@ export const DEFAULTS = {
   // null = the built-in SUMMARY_PROMPT (notes.js), resolved at summarize time so
   // prompt improvements reach every server that hasn't written its own.
   summaryPrompt: null,
+  // null = the bot's own username. While recording it shows as "<name> 🔴".
+  nickname: null,
 };
 
 const COLS = {
@@ -32,6 +34,7 @@ const COLS = {
   language: 'language',
   summaryLanguage: 'summary_language',
   summaryPrompt: 'summary_prompt',
+  nickname: 'nickname',
 };
 
 function fromRow(row) {
@@ -49,6 +52,7 @@ function fromRow(row) {
     language: row.language ?? DEFAULTS.language,
     summaryLanguage: row.summary_language ?? DEFAULTS.summaryLanguage,
     summaryPrompt: row.summary_prompt ?? DEFAULTS.summaryPrompt,
+    nickname: row.nickname ?? DEFAULTS.nickname,
   };
 }
 
@@ -65,8 +69,8 @@ export function setGuildConfig(db, guildId, patch) {
   const merged = { ...current, ...safePatch, guildId };
   db.sql.prepare(
     `INSERT OR REPLACE INTO guild_config
-       (guild_id, summarizer_provider, summarizer_model, summarizer_fallback_provider, summarizer_fallback_model, stt_provider, stt_model, whisper_model, notes_channel_id, use_thread, auto_join, language, summary_language, summary_prompt)
-     VALUES (@guildId, @summarizerProvider, @summarizerModel, @summarizerFallbackProvider, @summarizerFallbackModel, @sttProvider, @sttModel, @whisperModel, @notesChannelId, @useThread, @autoJoin, @language, @summaryLanguage, @summaryPrompt)`
+       (guild_id, summarizer_provider, summarizer_model, summarizer_fallback_provider, summarizer_fallback_model, stt_provider, stt_model, whisper_model, notes_channel_id, use_thread, auto_join, language, summary_language, summary_prompt, nickname)
+     VALUES (@guildId, @summarizerProvider, @summarizerModel, @summarizerFallbackProvider, @summarizerFallbackModel, @sttProvider, @sttModel, @whisperModel, @notesChannelId, @useThread, @autoJoin, @language, @summaryLanguage, @summaryPrompt, @nickname)`
   ).run({
     guildId,
     summarizerProvider: merged.summarizerProvider,
@@ -82,6 +86,7 @@ export function setGuildConfig(db, guildId, patch) {
     language: merged.language,
     summaryLanguage: merged.summaryLanguage,
     summaryPrompt: merged.summaryPrompt,
+    nickname: merged.nickname ?? null,
   });
   return merged;
 }

@@ -117,7 +117,7 @@ A fully self-hosted alternative to Otter/Fathom/Fireflies, built for Discord. Au
 - **Searchable history.** `/history`, `/summary`, `/raw`, and full-text `/search` over every past meeting, backed by SQLite FTS5.
 - **Campaign memory.** Group recurring calls (a D&D campaign, a long-running project) into a campaign by linking its voice channel. Parley keeps a living journal (party, NPCs, places, quests, loot, lore) that updates after every session and is fed back into the next session's summary, answers questions across every session with `/ask`, and writes a read-aloud "Previously on…" `/recap`.
 - **Resilient.** A failed track doesn't sink the meeting (per-track error tolerance), the bot recovers from voice disconnects, and failed transcriptions or summaries are retryable with one click from the dashboard (or the CLI).
-- **Auto join/leave.** Joins when 2+ people are talking, leaves when the room empties. Shows `[REC]` in its nickname while recording.
+- **Auto join/leave.** Joins when 2+ people are talking, leaves when the room empties. Adds 🔴 to its per-server nickname while recording (e.g. `st3bot 🔴`).
 - **Concurrent meetings.** Records multiple channels/servers at once — no global single-recording limit.
 
 ## ⚙️ How it works
@@ -128,7 +128,7 @@ A fully self-hosted alternative to Otter/Fathom/Fireflies, built for Discord. Au
 │      │                    │                                              │
 │  per-user PCM capture   pipeline orchestrator                            │
 │      │                    ├─→ STT client ──HTTP──┐                       │
-│  [REC] nickname           ├─→ summarizer adapter │  (gemini|ollama|...)  │
+│  🔴 nickname              ├─→ summarizer adapter │  (gemini|ollama|...)  │
 │                           └─→ SQLite store        │                      │
 └────────────────────────────────────────────────────┼───────────────────┘
                                                        │ localhost
@@ -311,7 +311,7 @@ pm2 save
 | `/recap [campaign] [sessions]` | "Previously on…" recap of the last session(s), to read at the table |
 | `/journal [campaign]` | Show the campaign journal (party, NPCs, places, quests, loot) |
 | `/campaign create\|link\|list` | Create campaigns and link voice channels to them (admin only) |
-| `/setup` | Configure the bot for this server (admin only) |
+| `/setup` | Configure the bot for this server, including its nickname (admin only) |
 
 **Auto join/leave:** the bot joins automatically when more than one human is in a voice channel and leaves when one or zero remain. Toggle with `/setup autojoin`.
 
@@ -359,7 +359,7 @@ Every backend returns the same `{ text, words }` shape with word-level timestamp
 
 ## 🔒 Privacy & consent
 
-- The bot shows `[REC]` in its nickname whenever a recording is active, so every member can see it.
+- The bot adds 🔴 to its nickname whenever a recording is active, so every member can see it.
 - With the default local sidecar, audio is transcribed **on the machine running the bot** — no audio leaves your network, and with Ollama as the summarizer nothing does at all. If you choose a **cloud** transcription provider (OpenAI), meeting audio is sent to that provider for transcription; only the final transcript text is sent to your chosen summarizer.
 - Recording people's voices is subject to consent laws that vary by jurisdiction (some require all-party consent). **You are responsible for obtaining consent from all participants.**
 

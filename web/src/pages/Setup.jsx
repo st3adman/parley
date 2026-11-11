@@ -49,6 +49,23 @@ function useCatalog(provider) {
   return { catalog: state.catalog, loading: state.loading, reload: () => load(true) };
 }
 
+// The bot's nickname in this server; " 🔴" is appended while recording.
+function NicknameField({ value, onSave }) {
+  const [draft, setDraft] = useState(value || '');
+  useEffect(() => { setDraft(value || ''); }, [value]);
+  const changed = draft.trim() !== (value || '');
+  const preview = draft.trim() || 'the bot’s username';
+  return (
+    <Field label="Bot nickname" hint={<>Shown in this server. While recording it appears as <span className="text-ink-2">{preview} 🔴</span>. Leave empty to use the bot’s username.</>}>
+      <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); if (changed) onSave(draft.trim() || null); }}>
+        <input className="input flex-1 min-w-0" value={draft} maxLength={29} placeholder="e.g. st3bot"
+          onChange={(e) => setDraft(e.target.value)} aria-label="Bot nickname" />
+        <button type="submit" className="btn btn-primary !py-2" disabled={!changed}>Save</button>
+      </form>
+    </Field>
+  );
+}
+
 function Field({ label, hint, children }) {
   return (
     <div>
@@ -544,6 +561,7 @@ export default function Setup() {
         </Card>
 
         <Card title="Behavior">
+          <NicknameField value={c.nickname} onSave={(nickname) => save({ nickname })} />
           <Switch checked={c.autoJoin} onChange={(e) => save({ autoJoin: e.target.checked })}
             label="Auto-join voice" desc="Join automatically when two or more people are in a voice channel." />
         </Card>

@@ -18,6 +18,7 @@ import { handleAutocomplete } from './commands/autocomplete.js';
 import { renderNotes, chunk } from './delivery/discord-notes.js';
 import { postNotes } from './delivery/post.js';
 import { askCampaign, recapCampaign, resolveCampaign } from './campaign/ask.js';
+import { nicknameFor, isStaleRecordingNickname } from './voice/nickname.js';
 
 export function startBot({ db, audioRoot }) {
   validateEnv(); // throws with a clear message if token/client id are missing
@@ -85,10 +86,23 @@ export function startBot({ db, audioRoot }) {
   function humanCount(channel) {
     return channel.members.filter((m) => !m.user.bot).size;
   }
-  function setRecIndicator(guild, on) {
-    guild.members.me?.setNickname(on ? '[REC] Meeting Bot' : null).catch((e) => {
-      console.warn('Nickname change failed:', e.message);
+  // The server's configured nickname, with " 🔴" appended while recording.
+  async function setRecIndicator(guild, on) {
+    const me = guild.members.me;
+    if (!me) return;
+    const nick = nicknameFor({ nickname: getGuildConfig(db, guild.id).nickname, username: client.user?.username, recording: on });
+    if ((me.nickname ?? null) === nick) return;
+    await me.setNickname(nick).catch((e) => {
+      console.warn(`Nickname change failed in ${guild.id} (needs the Change Nickname permission):`, e.message);
     });
+  }
+  // Re-apply after the nickname setting changes, keeping the 🔴 if a recording
+  // is in progress in this server.
+  async function applyNickname(guildId) {
+    const guild = client.guilds.cache.get(guildId);
+    if (!guild) return;
+    const recording = manager.listActive().some((s) => s.guildId === guildId);
+    await setRecIndicator(guild, recording);
   }
   function hasVoicePermissions(channel) {
     const perms = channel.guild.members.me?.permissionsIn(channel);
@@ -223,6 +237,11 @@ export function startBot({ db, audioRoot }) {
       // Persist the guild's human name so the web UI can label it even when read
       // without a live Discord client (e.g. the standalone API server).
       db.upsertGuild(guildId, guild.name);
+      // Nothing records right after login, so clear a 🔴 left behind by a crash
+      // and apply the configured nickname.
+      if (getGuildConfig(db, guildId).nickname || isStaleRecordingNickname(guild.members.me?.nickname)) {
+        await setRecIndicator(guild, false);
+      }
       await deployCommands(config.discordClientId, config.discordToken, guildId)
         .then(() => console.log(`Registered commands in guild ${guildId}`))
         .catch((e) => console.error(`deploy to guild ${guildId} failed:`, e.message));
@@ -434,10 +453,12 @@ export function startBot({ db, audioRoot }) {
           autoJoin: interaction.options.getBoolean('autojoin') ?? undefined,
           language: interaction.options.getString('language') ?? undefined,
           summary_language: interaction.options.getString('summary_language') ?? undefined,
+          nickname: interaction.options.getString('nickname') ?? undefined,
         };
         const result = validateSetup(input, config);
         if (!result.ok) return interaction.reply({ content: `❌ ${result.error}`, ephemeral: true });
         const merged = setGuildConfig(db, guild.id, result.patch);
+        if (result.patch.nickname !== undefined) await applyNickname(guild.id);
         return interaction.reply({ content: `✅ Config updated:\n\`\`\`json\n${JSON.stringify(merged, null, 2)}\n\`\`\``, ephemeral: true });
       }
     } catch (err) {
@@ -455,5 +476,5 @@ export function startBot({ db, audioRoot }) {
   const loginResult = client.login(config.discordToken).catch((err) => {
     client.emit('error', err instanceof Error ? err : new Error(String(err)));
   });
-  return { client, manager, stopAndLeave, loginResult };
+  return { client, manager, stopAndLeave, applyNickname, loginResult };
 }

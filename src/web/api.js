@@ -285,6 +285,9 @@ export function apiRouter({ db, bot = null, client = null, sidecar = null }) {
     const result = validateSetup(req.body, env);
     if (!result.ok) return res.status(400).json({ error: result.error });
     const config = setGuildConfig(db, req.params.g, result.patch);
+    if (result.patch.nickname !== undefined && typeof bot?.applyNickname === 'function') {
+      await bot.applyNickname(req.params.g).catch(() => {});
+    }
     // Follow the transcription backend with the local sidecar process: start it
     // when a guild switches to the sidecar, and stop it when no guild needs it
     // anymore (switched everything to a cloud API). Best-effort, non-blocking.

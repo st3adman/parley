@@ -2,6 +2,7 @@ import { SUPPORTED_PROVIDERS } from '../adapters/summarizer/index.js';
 import { DEFAULT_MODELS } from '../adapters/summarizer/models.js';
 import { LANGUAGE_CODES, SUMMARY_LANGUAGE_VALUES } from '../adapters/summarizer/languages.js';
 import { STT_PROVIDERS, STT_MODELS, sttProviderReady } from '../adapters/stt/index.js';
+import { MAX_NICKNAME } from '../voice/nickname.js';
 
 const WHISPER_MODELS = ['tiny', 'base', 'small', 'medium', 'large-v3', 'large-v3-turbo'];
 
@@ -106,6 +107,20 @@ export function validateSetup(input, env) {
       return { ok: false, error: 'Summary prompt must be non-empty text of at most 20,000 characters.' };
     }
     patch.summaryPrompt = prompt;
+  }
+
+  // Bot nickname for this server. Empty / "none" clears it (back to the bot's
+  // username). Length leaves room for the " 🔴" recording suffix within
+  // Discord's 32-character nickname limit.
+  if (input.nickname !== undefined) {
+    const nick = typeof input.nickname === 'string' ? input.nickname.trim() : '';
+    if (!nick || nick.toLowerCase() === 'none') {
+      patch.nickname = null;
+    } else if ([...nick].length > MAX_NICKNAME) {
+      return { ok: false, error: `Nickname must be at most ${MAX_NICKNAME} characters (room is kept for the 🔴 recording marker).` };
+    } else {
+      patch.nickname = nick;
+    }
   }
 
   return { ok: true, patch };

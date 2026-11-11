@@ -12,6 +12,7 @@ export class BotController {
     this.client = null;
     this.manager = null;
     this.stopAndLeave = null;
+    this.applyNicknameFn = null;
     this.state = 'stopped';     // 'stopped' | 'starting' | 'ready' | 'error'
     this.error = null;
   }
@@ -31,7 +32,8 @@ export class BotController {
     this.state = 'starting';
     this.error = null;
     try {
-      const { client, manager, stopAndLeave } = startBot({ db: this.db, audioRoot: this.audioRoot });
+      const { client, manager, stopAndLeave, applyNickname } = startBot({ db: this.db, audioRoot: this.audioRoot });
+      this.applyNicknameFn = applyNickname;
       this.client = client;
       this.manager = manager;
       this.stopAndLeave = stopAndLeave;
@@ -67,6 +69,7 @@ export class BotController {
     this.client = null;
     this.manager = null;
     this.stopAndLeave = null;
+    this.applyNicknameFn = null;
     this.state = 'stopped';
   }
 
@@ -89,6 +92,11 @@ export class BotController {
     if (this.stopAndLeave) await this.stopAndLeave(guildId, channelId);
     else await this.manager.stop(guildId, channelId);
     return { ok: true };
+  }
+
+  /** Re-apply a server's bot nickname after it changes in Settings. Best-effort. */
+  async applyNickname(guildId) {
+    if (this.applyNicknameFn && this.state === 'ready') await this.applyNicknameFn(guildId);
   }
 
   /** Stop then start — used after credentials change in the UI. */
