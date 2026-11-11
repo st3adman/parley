@@ -116,7 +116,7 @@ export function openDb(path) {
   if (!cols.some((c) => c.name === 'summary_prompt')) {
     sql.exec(`ALTER TABLE guild_config ADD COLUMN summary_prompt TEXT`);
   }
-  // Migration: per-server bot nickname (shown with " 🔴" while recording).
+  // Migration: per-server bot nickname (shown as "🔴 name" while recording).
   if (!cols.some((c) => c.name === 'nickname')) {
     sql.exec(`ALTER TABLE guild_config ADD COLUMN nickname TEXT`);
   }

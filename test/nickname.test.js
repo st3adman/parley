@@ -5,24 +5,25 @@ import { getGuildConfig, setGuildConfig } from '../src/store/config.js';
 import { validateSetup } from '../src/commands/setup-logic.js';
 import { nicknameFor, isStaleRecordingNickname, MAX_NICKNAME } from '../src/voice/nickname.js';
 
-test('recording appends " 🔴" to the server nickname', () => {
-  assert.equal(nicknameFor({ nickname: 'st3bot', username: 'Parley', recording: true }), 'st3bot 🔴');
+test('recording puts "🔴 " in front of the server nickname', () => {
+  assert.equal(nicknameFor({ nickname: 'st3bot', username: 'Parley', recording: true }), '🔴 st3bot');
   assert.equal(nicknameFor({ nickname: 'st3bot', username: 'Parley', recording: false }), 'st3bot');
 });
 
 test('without a nickname: username while recording, cleared when idle', () => {
-  assert.equal(nicknameFor({ nickname: null, username: 'Parley', recording: true }), 'Parley 🔴');
+  assert.equal(nicknameFor({ nickname: null, username: 'Parley', recording: true }), '🔴 Parley');
   assert.equal(nicknameFor({ nickname: null, username: 'Parley', recording: false }), null);
 });
 
 test('recording nickname never exceeds Discord\'s 32-character limit', () => {
   const nick = nicknameFor({ nickname: null, username: 'x'.repeat(40), recording: true });
   assert.ok(nick.length <= 32);
-  assert.ok(nick.endsWith(' 🔴'));
+  assert.ok(nick.startsWith('🔴 '));
 });
 
 test('stale recording nicknames are detected', () => {
-  assert.equal(isStaleRecordingNickname('st3bot 🔴'), true);
+  assert.equal(isStaleRecordingNickname('🔴 st3bot'), true);
+  assert.equal(isStaleRecordingNickname('st3bot 🔴'), true); // earlier suffix style
   assert.equal(isStaleRecordingNickname('[REC] Meeting Bot'), true);
   assert.equal(isStaleRecordingNickname('st3bot'), false);
   assert.equal(isStaleRecordingNickname(null), false);

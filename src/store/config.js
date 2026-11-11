@@ -16,7 +16,7 @@ export const DEFAULTS = {
   // null = the built-in SUMMARY_PROMPT (notes.js), resolved at summarize time so
   // prompt improvements reach every server that hasn't written its own.
   summaryPrompt: null,
-  // null = the bot's own username. While recording it shows as "<name> 🔴".
+  // null = the bot's own username. While recording it shows as "🔴 <name>".
   nickname: null,
 };
 

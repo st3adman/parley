@@ -110,7 +110,7 @@ export function validateSetup(input, env) {
   }
 
   // Bot nickname for this server. Empty / "none" clears it (back to the bot's
-  // username). Length leaves room for the " 🔴" recording suffix within
+  // username). Length leaves room for the "🔴 " recording prefix within
   // Discord's 32-character nickname limit.
   if (input.nickname !== undefined) {
     const nick = typeof input.nickname === 'string' ? input.nickname.trim() : '';

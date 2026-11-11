@@ -64,7 +64,7 @@ export function buildCommands() {
       .addBooleanOption((o) => o.setName('autojoin').setDescription('Auto-join when 2+ people are in voice'))
       .addStringOption((o) => o.setName('language').setDescription('Spoken language (pick German to fix DE/EN mixing)')
         .addChoices(...LANGUAGES.map((l) => ({ name: l.name, value: l.code })), { name: 'Auto-detect', value: 'auto' }))
-      .addStringOption((o) => o.setName('nickname').setDescription('Bot nickname in this server; shows "name 🔴" while recording ("none" to reset)').setMaxLength(29))
+      .addStringOption((o) => o.setName('nickname').setDescription('Bot nickname in this server; shows "🔴 name" while recording ("none" to reset)').setMaxLength(29))
       .addStringOption((o) => o.setName('summary_language').setDescription('Language for the notes/summary')
         .addChoices(...LANGUAGES.map((l) => ({ name: l.name, value: l.code })), { name: 'Match transcription', value: 'match' })),
   ];
@@ -81,7 +81,7 @@ export function commandsJSON() {
 export const COMMAND_CATALOG = [
   { name: 'join', category: 'Recording', admin: false, args: null,
     summary: 'Join your current voice channel and start recording.',
-    detail: 'Parley joins the voice channel you are in and begins capturing a separate audio track per speaker. While recording, its nickname gets a 🔴 (e.g. "st3bot 🔴") — set the nickname per server in /setup or Settings.' },
+    detail: 'Parley joins the voice channel you are in and begins capturing a separate audio track per speaker. While recording, its nickname gets a 🔴 in front (e.g. "🔴 st3bot") — set the nickname per server in /setup or Settings.' },
   { name: 'leave', category: 'Recording', admin: false, args: null,
     summary: 'Stop recording, transcribe, and post the notes.',
     detail: 'Ends the meeting, transcribes every track locally, and posts the structured notes to the configured channel or a thread.' },
@@ -115,6 +115,6 @@ export const COMMAND_CATALOG = [
   { name: 'setup', category: 'Configuration', admin: true,
     args: '[provider] [model] [fallback_provider] [fallback_model] [stt_provider] [stt_model] [whisper_model] [notes_channel] [thread] [autojoin] [language] [summary_language] [nickname]',
     summary: 'Configure the bot for this server (admin only).',
-    detail: 'Set the summarizer provider/model, an optional fallback summarizer used only when the primary fails (set fallback_provider to "none" to disable), the speech-to-text provider (local sidecar or OpenAI) and model, notes channel, threading, auto-join, languages, and the bot\'s nickname in this server (shown as "name 🔴" while recording). You can also do all of this from this dashboard under Settings.' },
+    detail: 'Set the summarizer provider/model, an optional fallback summarizer used only when the primary fails (set fallback_provider to "none" to disable), the speech-to-text provider (local sidecar or OpenAI) and model, notes channel, threading, auto-join, languages, and the bot\'s nickname in this server (shown as "🔴 name" while recording). You can also do all of this from this dashboard under Settings.' },
 ];
 ;

@@ -49,14 +49,14 @@ function useCatalog(provider) {
   return { catalog: state.catalog, loading: state.loading, reload: () => load(true) };
 }
 
-// The bot's nickname in this server; " 🔴" is appended while recording.
+// The bot's nickname in this server; "🔴 " is put in front while recording.
 function NicknameField({ value, onSave }) {
   const [draft, setDraft] = useState(value || '');
   useEffect(() => { setDraft(value || ''); }, [value]);
   const changed = draft.trim() !== (value || '');
   const preview = draft.trim() || 'the bot’s username';
   return (
-    <Field label="Bot nickname" hint={<>Shown in this server. While recording it appears as <span className="text-ink-2">{preview} 🔴</span>. Leave empty to use the bot’s username.</>}>
+    <Field label="Bot nickname" hint={<>Shown in this server. While recording it appears as <span className="text-ink-2">🔴 {preview}</span>. Leave empty to use the bot’s username.</>}>
       <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); if (changed) onSave(draft.trim() || null); }}>
         <input className="input flex-1 min-w-0" value={draft} maxLength={29} placeholder="e.g. st3bot"
           onChange={(e) => setDraft(e.target.value)} aria-label="Bot nickname" />

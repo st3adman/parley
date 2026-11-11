@@ -86,7 +86,7 @@ export function startBot({ db, audioRoot }) {
   function humanCount(channel) {
     return channel.members.filter((m) => !m.user.bot).size;
   }
-  // The server's configured nickname, with " 🔴" appended while recording.
+  // The server's configured nickname, with "🔴 " in front while recording.
   async function setRecIndicator(guild, on) {
     const me = guild.members.me;
     if (!me) return;
