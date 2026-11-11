@@ -58,6 +58,23 @@ CREATE INDEX IF NOT EXISTS utterances_meeting ON utterances(meeting_id);
 CREATE INDEX IF NOT EXISTS todos_meeting ON todos(meeting_id);
 CREATE INDEX IF NOT EXISTS todos_guild ON todos(guild_id);
 CREATE INDEX IF NOT EXISTS meetings_guild ON meetings(guild_id);
+CREATE TABLE IF NOT EXISTS campaigns (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  guild_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  journal TEXT,
+  journal_updated_at TEXT,
+  journal_status TEXT NOT NULL DEFAULT 'idle',
+  journal_error TEXT,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS campaigns_guild ON campaigns(guild_id);
+CREATE TABLE IF NOT EXISTS campaign_channels (
+  channel_id TEXT PRIMARY KEY,
+  campaign_id INTEGER NOT NULL,
+  guild_id TEXT NOT NULL,
+  channel_name TEXT
+);
 `;
 
 export function openDb(path) {
@@ -77,6 +94,18 @@ export function openDb(path) {
   if (!meetingCols.some((c) => c.name === 'transcription_complete')) {
     sql.exec(`ALTER TABLE meetings ADD COLUMN transcription_complete INTEGER`);
   }
+  // Migration: campaign memory. campaign_id groups sessions into a campaign;
+  // journaled_at marks a session already folded into its campaign journal.
+  if (!meetingCols.some((c) => c.name === 'campaign_id')) {
+    sql.exec(`ALTER TABLE meetings ADD COLUMN campaign_id INTEGER`);
+  }
+  if (!meetingCols.some((c) => c.name === 'journaled_at')) {
+    sql.exec(`ALTER TABLE meetings ADD COLUMN journaled_at TEXT`);
+  }
+  sql.exec(`CREATE INDEX IF NOT EXISTS meetings_campaign ON meetings(campaign_id)`);
+  // A journal update can't survive a restart; don't leave the UI showing a
+  // spinner forever.
+  sql.exec(`UPDATE campaigns SET journal_status = 'idle' WHERE journal_status = 'updating'`);
 
   // Migration: add summary_language to dbs created before the column existed.
   const cols = sql.prepare(`PRAGMA table_info(guild_config)`).all();
@@ -111,10 +140,14 @@ export function openDb(path) {
   return {
     sql,
     createMeeting({ guildId, channelId, channelName, startedAt }) {
+      // A voice channel linked to a campaign files every recording there into it.
+      const link = channelId
+        ? sql.prepare(`SELECT campaign_id FROM campaign_channels WHERE channel_id = ?`).get(channelId)
+        : null;
       const r = sql.prepare(
-        `INSERT INTO meetings (guild_id, channel_id, channel_name, started_at, status)
-         VALUES (?, ?, ?, ?, 'recording')`
-      ).run(guildId, channelId, channelName, startedAt);
+        `INSERT INTO meetings (guild_id, channel_id, channel_name, started_at, status, campaign_id)
+         VALUES (?, ?, ?, ?, 'recording', ?)`
+      ).run(guildId, channelId, channelName, startedAt, link?.campaign_id ?? null);
       return r.lastInsertRowid;
     },
     getMeeting(id) { return sql.prepare(`SELECT * FROM meetings WHERE id = ?`).get(id); },
@@ -144,6 +177,13 @@ export function openDb(path) {
       const placeholders = sources.map(() => '?').join(',');
       sql.exec('BEGIN');
       try {
+        // If any merged piece was already folded into a campaign journal, its
+        // content is there; don't fold the combined session in a second time.
+        sql.prepare(
+          `UPDATE meetings SET journaled_at = COALESCE(journaled_at,
+             (SELECT MAX(journaled_at) FROM meetings WHERE id IN (${placeholders})))
+           WHERE id = ?`
+        ).run(...sources, targetId);
         sql.prepare(`UPDATE utterances SET meeting_id = ? WHERE meeting_id IN (${placeholders})`).run(targetId, ...sources);
         // Carry over attendees not already on the target.
         sql.prepare(
@@ -343,6 +383,129 @@ export function openDb(path) {
             )`
       ).run();
       return r.changes;
+    },
+
+    // ── Campaigns ───────────────────────────────────────────────────────────
+    // A campaign groups many meetings ("sessions") and owns a living journal
+    // the LLM updates after each one. Voice channels link to a campaign so new
+    // recordings there join it automatically (see createMeeting).
+    createCampaign({ guildId, name }) {
+      const r = sql.prepare(
+        `INSERT INTO campaigns (guild_id, name, created_at) VALUES (?, ?, ?)`
+      ).run(guildId, name, new Date().toISOString());
+      return Number(r.lastInsertRowid);
+    },
+    getCampaign(id) {
+      return sql.prepare(`SELECT * FROM campaigns WHERE id = ?`).get(id) ?? null;
+    },
+    listCampaigns(guildId) {
+      const rows = sql.prepare(
+        `SELECT c.*,
+            (SELECT COUNT(*) FROM meetings m WHERE m.campaign_id = c.id AND m.status != 'empty') AS session_count,
+            (SELECT COUNT(*) FROM meetings m WHERE m.campaign_id = c.id AND m.status = 'done' AND m.journaled_at IS NULL) AS pending_count,
+            (SELECT MAX(m.started_at) FROM meetings m WHERE m.campaign_id = c.id) AS last_session_at
+         FROM campaigns c WHERE c.guild_id = ?
+         ORDER BY COALESCE(last_session_at, c.created_at) DESC`
+      ).all(guildId);
+      return rows.map((c) => ({ ...c, channels: this.listCampaignChannels(c.id) }));
+    },
+    renameCampaign(id, name) {
+      sql.prepare(`UPDATE campaigns SET name = ? WHERE id = ?`).run(name, id);
+    },
+    // Sessions stay in the archive; they just stop belonging to a campaign.
+    deleteCampaign(id) {
+      sql.exec('BEGIN');
+      try {
+        sql.prepare(`UPDATE meetings SET campaign_id = NULL, journaled_at = NULL WHERE campaign_id = ?`).run(id);
+        sql.prepare(`DELETE FROM campaign_channels WHERE campaign_id = ?`).run(id);
+        sql.prepare(`DELETE FROM campaigns WHERE id = ?`).run(id);
+        sql.exec('COMMIT');
+      } catch (e) {
+        sql.exec('ROLLBACK');
+        throw e;
+      }
+    },
+    // Link a voice channel (a channel belongs to at most one campaign). With
+    // includePast, earlier recordings from that channel that aren't in another
+    // campaign join this one too. Returns how many past sessions were attached.
+    linkCampaignChannel(campaignId, { guildId, channelId, channelName = null, includePast = false }) {
+      sql.prepare(
+        `INSERT INTO campaign_channels (channel_id, campaign_id, guild_id, channel_name) VALUES (?, ?, ?, ?)
+         ON CONFLICT(channel_id) DO UPDATE SET campaign_id = excluded.campaign_id,
+           channel_name = COALESCE(excluded.channel_name, campaign_channels.channel_name)`
+      ).run(channelId, campaignId, guildId, channelName);
+      if (!includePast) return 0;
+      return Number(sql.prepare(
+        `UPDATE meetings SET campaign_id = ? WHERE channel_id = ? AND guild_id = ? AND campaign_id IS NULL`
+      ).run(campaignId, channelId, guildId).changes);
+    },
+    unlinkCampaignChannel(channelId) {
+      sql.prepare(`DELETE FROM campaign_channels WHERE channel_id = ?`).run(channelId);
+    },
+    listCampaignChannels(campaignId) {
+      return sql.prepare(
+        `SELECT channel_id, channel_name FROM campaign_channels WHERE campaign_id = ? ORDER BY channel_name`
+      ).all(campaignId);
+    },
+    campaignForChannel(channelId) {
+      const row = sql.prepare(`SELECT campaign_id FROM campaign_channels WHERE channel_id = ?`).get(channelId);
+      return row ? this.getCampaign(row.campaign_id) : null;
+    },
+    // Moving a session to a different campaign clears its journaled mark: the
+    // new campaign's journal has never seen it.
+    setMeetingCampaign(meetingId, campaignId) {
+      sql.prepare(
+        `UPDATE meetings SET journaled_at = CASE WHEN campaign_id IS ? THEN journaled_at ELSE NULL END,
+                             campaign_id = ? WHERE id = ?`
+      ).run(campaignId ?? null, campaignId ?? null, meetingId);
+    },
+    // Every session in a campaign, oldest first, numbered 1..n, with its notes.
+    listCampaignSessions(campaignId) {
+      const rows = sql.prepare(
+        `SELECT m.*, s.notes_json,
+            (SELECT COUNT(*) FROM utterances u WHERE u.meeting_id = m.id) AS utterance_count
+           FROM meetings m LEFT JOIN summaries s ON s.meeting_id = m.id
+          WHERE m.campaign_id = ? AND m.status != 'empty'
+          ORDER BY m.started_at, m.id`
+      ).all(campaignId);
+      return rows.map(({ notes_json, ...m }, i) => {
+        let notes = null;
+        try { if (notes_json) notes = JSON.parse(notes_json); } catch { /* unreadable → null */ }
+        return { ...m, number: i + 1, notes };
+      });
+    },
+    setCampaignJournal(campaignId, journal) {
+      sql.prepare(`UPDATE campaigns SET journal = ?, journal_updated_at = ? WHERE id = ?`)
+        .run(journal, new Date().toISOString(), campaignId);
+    },
+    setJournalStatus(campaignId, status, error = null) {
+      sql.prepare(`UPDATE campaigns SET journal_status = ?, journal_error = ? WHERE id = ?`)
+        .run(status, error, campaignId);
+    },
+    markJournaled(meetingId, at = new Date().toISOString()) {
+      sql.prepare(`UPDATE meetings SET journaled_at = ? WHERE id = ?`).run(at, meetingId);
+    },
+    clearJournaled(campaignId) {
+      sql.prepare(`UPDATE meetings SET journaled_at = NULL WHERE campaign_id = ?`).run(campaignId);
+    },
+    // Best-matching utterances across a campaign for an FTS5 query string
+    // (built by the caller from escaped terms), best match first.
+    searchCampaignUtterances(campaignId, ftsQuery, limit = 15) {
+      return sql.prepare(
+        `SELECT u.* FROM utterances_fts f
+           JOIN utterances u ON u.id = f.rowid
+           JOIN meetings m ON m.id = u.meeting_id
+          WHERE m.campaign_id = ? AND utterances_fts MATCH ?
+          ORDER BY bm25(utterances_fts) LIMIT ?`
+      ).all(campaignId, ftsQuery, limit);
+    },
+    firstUtteranceMs(meetingId) {
+      return sql.prepare(`SELECT MIN(start_ms) AS t FROM utterances WHERE meeting_id = ?`).get(meetingId)?.t ?? null;
+    },
+    utterancesBetween(meetingId, fromMs, toMs) {
+      return sql.prepare(
+        `SELECT * FROM utterances WHERE meeting_id = ? AND start_ms BETWEEN ? AND ? ORDER BY start_ms`
+      ).all(meetingId, fromMs, toMs);
     },
 
     // ── Dashboard aggregates ────────────────────────────────────────────────

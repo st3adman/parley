@@ -22,6 +22,29 @@ export function buildCommands() {
       .addIntegerOption((o) => o.setName('meeting').setDescription('Meeting id (default: most recent)')),
     new SlashCommandBuilder().setName('search').setDescription('Search past meetings')
       .addStringOption((o) => o.setName('keyword').setDescription('Word or phrase').setRequired(true)),
+    new SlashCommandBuilder().setName('ask').setDescription('Ask a question across every session of a campaign')
+      .addStringOption((o) => o.setName('question').setDescription('e.g. "What did the lich want with the amulet?"').setRequired(true).setMaxLength(500))
+      .addStringOption((o) => o.setName('campaign').setDescription('Campaign (default: the one linked to your voice channel, else the latest)').setAutocomplete(true))
+      .addBooleanOption((o) => o.setName('public').setDescription('Post the answer for everyone (default: only you)')),
+    new SlashCommandBuilder().setName('recap').setDescription('"Previously on…" recap of the last session(s)')
+      .addStringOption((o) => o.setName('campaign').setDescription('Campaign (default: the one linked to your voice channel, else the latest)').setAutocomplete(true))
+      .addIntegerOption((o) => o.setName('sessions').setDescription('How many recent sessions to cover (1-5, default 1)').setMinValue(1).setMaxValue(5))
+      .addBooleanOption((o) => o.setName('public').setDescription('Post the recap for everyone (default: only you)')),
+    new SlashCommandBuilder().setName('journal').setDescription('Show the campaign journal (party, NPCs, places, quests, loot)')
+      .addStringOption((o) => o.setName('campaign').setDescription('Campaign (default: the one linked to your voice channel, else the latest)').setAutocomplete(true)),
+    new SlashCommandBuilder().setName('campaign').setDescription('Manage campaigns (admin only)')
+      .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+      .addSubcommand((sc) => sc.setName('create').setDescription('Create a campaign, optionally linked to a voice channel')
+        .addStringOption((o) => o.setName('name').setDescription('Campaign name').setRequired(true).setMaxLength(100))
+        .addChannelOption((o) => o.setName('voice_channel').setDescription('Recordings in this channel join the campaign')
+          .addChannelTypes(ChannelType.GuildVoice, ChannelType.GuildStageVoice))
+        .addBooleanOption((o) => o.setName('include_past').setDescription('Also add earlier recordings from that channel')))
+      .addSubcommand((sc) => sc.setName('link').setDescription('Link a voice channel to a campaign')
+        .addStringOption((o) => o.setName('campaign').setDescription('Campaign').setRequired(true).setAutocomplete(true))
+        .addChannelOption((o) => o.setName('voice_channel').setDescription('Voice channel').setRequired(true)
+          .addChannelTypes(ChannelType.GuildVoice, ChannelType.GuildStageVoice))
+        .addBooleanOption((o) => o.setName('include_past').setDescription('Also add earlier recordings from that channel')))
+      .addSubcommand((sc) => sc.setName('list').setDescription('List campaigns and their linked channels')),
     new SlashCommandBuilder().setName('setup').setDescription('Configure the bot (admin only)')
       .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
       .addStringOption((o) => o.setName('provider').setDescription('Summarizer provider')
@@ -76,6 +99,18 @@ export const COMMAND_CATALOG = [
     detail: 'A JSON dump for debugging or exporting a meeting.' },
   { name: 'search', category: 'Notes', admin: false, args: '<keyword>',
     summary: 'Full-text search across every past meeting transcript.' },
+  { name: 'ask', category: 'Campaigns', admin: false, args: '<question> [campaign] [public]',
+    summary: 'Ask a question across every session of a campaign.',
+    detail: 'Answers from the campaign journal, every session\'s notes, and the transcript passages that best match your question, citing the session numbers. Defaults to the campaign linked to your voice channel, or the most recently active one.' },
+  { name: 'recap', category: 'Campaigns', admin: false, args: '[campaign] [sessions] [public]',
+    summary: 'Write a "Previously on…" recap to read at the start of the next game.',
+    detail: 'A short, read-aloud recap of the last session (or up to 5), ending on where the party stands. Set public to post it for the whole table.' },
+  { name: 'journal', category: 'Campaigns', admin: false, args: '[campaign]',
+    summary: 'Show the campaign journal: party, NPCs, places, quests, loot, lore.',
+    detail: 'The journal is updated automatically after each session in the campaign. Edit it or rebuild it from the dashboard\'s Campaigns page.' },
+  { name: 'campaign', category: 'Campaigns', admin: true, args: 'create <name> [voice_channel] [include_past] · link <campaign> <voice_channel> [include_past] · list',
+    summary: 'Create campaigns and link voice channels to them (admin only).',
+    detail: 'Recordings in a linked voice channel join that campaign automatically, feed its journal, and become searchable with /ask. include_past also adds earlier recordings from the channel (use "Update journal" on the dashboard to fold them in).' },
   { name: 'setup', category: 'Configuration', admin: true,
     args: '[provider] [model] [fallback_provider] [fallback_model] [stt_provider] [stt_model] [whisper_model] [notes_channel] [thread] [autojoin] [language] [summary_language]',
     summary: 'Configure the bot for this server (admin only).',

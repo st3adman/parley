@@ -38,6 +38,11 @@ export const Icon = {
   Stop: (p) => <I {...p}><rect x="6" y="6" width="12" height="12" rx="2.5" /></I>,
   LogOut: (p) => <I {...p}><path d="M15 4h3.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H15" /><path d="M10 17l5-5-5-5M15 12H3" /></I>,
   UserPlus: (p) => <I {...p}><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20a6.5 6.5 0 0 1 13 0" /><path d="M19 8v6M22 11h-6" /></I>,
+  Book: (p) => <I {...p}><path d="M4 19.5V5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2Zm0 0A2 2 0 0 0 6 21.5h13" /><path d="M9 7.5h6" /></I>,
+  Plus: (p) => <I {...p}><path d="M12 5v14M5 12h14" /></I>,
+  X: (p) => <I {...p}><path d="M6 6l12 12M18 6 6 18" /></I>,
+  Pencil: (p) => <I {...p}><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z" /><path d="m13.5 6.5 4 4" /></I>,
+  Copy: (p) => <I {...p}><rect x="8.5" y="8.5" width="12" height="12" rx="2" /><path d="M15.5 8.5V5a1.5 1.5 0 0 0-1.5-1.5H5A1.5 1.5 0 0 0 3.5 5v9A1.5 1.5 0 0 0 5 15.5h3.5" /></I>,
   Shield: (p) => <I {...p}><path d="M12 3l8 3v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z" /></I>,
 };
 

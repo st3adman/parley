@@ -12,6 +12,7 @@ const NAV = [
   { to: '/', label: 'Dashboard', icon: Icon.Home, end: true },
   { to: '/live', label: 'Live', icon: Icon.Radio, live: true },
   { to: '/meetings', label: 'Meetings', icon: Icon.Meetings },
+  { to: '/campaigns', label: 'Campaigns', icon: Icon.Book },
   { to: '/action-items', label: 'Action items', icon: Icon.CheckSquare },
   { to: '/analytics', label: 'Analytics', icon: Icon.Chart },
   { to: '/search', label: 'Search', icon: Icon.Search },

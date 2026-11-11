@@ -17,6 +17,7 @@ import { validateSetup } from './commands/setup-logic.js';
 import { handleAutocomplete } from './commands/autocomplete.js';
 import { renderNotes, chunk } from './delivery/discord-notes.js';
 import { postNotes } from './delivery/post.js';
+import { askCampaign, recapCampaign, resolveCampaign } from './campaign/ask.js';
 
 export function startBot({ db, audioRoot }) {
   validateEnv(); // throws with a clear message if token/client id are missing
@@ -357,6 +358,67 @@ export function startBot({ db, audioRoot }) {
         if (!hits.length) return interaction.reply({ content: `No matches for "${kw}".`, ephemeral: true });
         const text = hits.slice(0, 10).map((h) => `#${h.meeting_id} ${h.display_name}: ${h.text}`).join('\n');
         return interaction.reply({ content: chunk(text)[0], ephemeral: true });
+      }
+      if (commandName === 'ask' || commandName === 'recap' || commandName === 'journal') {
+        const campaign = resolveCampaign(db, guild.id, {
+          campaign: interaction.options.getString('campaign'),
+          voiceChannelId: member.voice?.channelId,
+        });
+        if (!campaign) {
+          return interaction.reply({ content: '❌ No campaign found. An admin can create one with `/campaign create` (or on the dashboard\'s Campaigns page).', ephemeral: true });
+        }
+        if (commandName === 'journal') {
+          const fresh = db.getCampaign(campaign.id);
+          const body = fresh.journal?.trim() || '_The journal is empty. It fills in automatically after each session in this campaign._';
+          const parts = chunk(`📜 **${fresh.name} — Campaign journal**\n\n${body}`);
+          await interaction.reply({ content: parts[0], ephemeral: true });
+          for (const p of parts.slice(1)) await interaction.followUp({ content: p, ephemeral: true });
+          return;
+        }
+        const ephemeral = !interaction.options.getBoolean('public');
+        await interaction.deferReply({ ephemeral });
+        let text;
+        if (commandName === 'ask') {
+          const question = interaction.options.getString('question');
+          const answer = await askCampaign(db, campaign.id, question);
+          text = `**Q:** ${question}\n_${campaign.name}_\n\n${answer}`;
+        } else {
+          const recap = await recapCampaign(db, campaign.id, { sessions: interaction.options.getInteger('sessions') ?? 1 });
+          text = `🎲 **Previously on ${campaign.name}…**\n\n${recap}`;
+        }
+        const parts = chunk(text);
+        await interaction.editReply(parts[0]);
+        for (const p of parts.slice(1)) await interaction.followUp({ content: p, ephemeral });
+        return;
+      }
+      if (commandName === 'campaign') {
+        const sub = interaction.options.getSubcommand();
+        if (sub === 'list') {
+          const all = db.listCampaigns(guild.id);
+          if (!all.length) return interaction.reply({ content: 'No campaigns yet. Create one with `/campaign create`.', ephemeral: true });
+          const text = all.map((c) => {
+            const chans = c.channels.length ? c.channels.map((ch) => `<#${ch.channel_id}>`).join(', ') : 'no linked channel';
+            return `**${c.name}** — ${c.session_count} session${c.session_count === 1 ? '' : 's'} • ${chans}`;
+          }).join('\n');
+          return interaction.reply({ content: chunk(text)[0], ephemeral: true });
+        }
+        const vc = interaction.options.getChannel('voice_channel');
+        const includePast = !!interaction.options.getBoolean('include_past');
+        let campaign;
+        if (sub === 'create') {
+          const name = interaction.options.getString('name').trim();
+          campaign = db.getCampaign(db.createCampaign({ guildId: guild.id, name }));
+        } else {
+          campaign = resolveCampaign(db, guild.id, { campaign: interaction.options.getString('campaign') });
+          if (!campaign) return interaction.reply({ content: '❌ Campaign not found.', ephemeral: true });
+        }
+        let msg = sub === 'create' ? `✅ Created campaign **${campaign.name}**.` : `✅ Updated **${campaign.name}**.`;
+        if (vc) {
+          const attached = db.linkCampaignChannel(campaign.id, { guildId: guild.id, channelId: vc.id, channelName: vc.name, includePast });
+          msg += ` Recordings in <#${vc.id}> now join it.`;
+          if (attached) msg += ` Added ${attached} earlier recording${attached === 1 ? '' : 's'} — use **Update journal** on the dashboard's Campaigns page to fold ${attached === 1 ? 'it' : 'them'} into the journal.`;
+        }
+        return interaction.reply({ content: msg, ephemeral: true });
       }
       if (commandName === 'setup') {
         const input = {

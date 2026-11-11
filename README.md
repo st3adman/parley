@@ -115,6 +115,7 @@ A fully self-hosted alternative to Otter/Fathom/Fireflies, built for Discord. Au
 - **Local or cloud speech-to-text.** Run a warm [faster-whisper](https://github.com/SYSTRAN/faster-whisper) sidecar (fully offline, free — **uses your NVIDIA GPU automatically** when available, with CPU fallback, and **batched inference** for 1.7–2.6x throughput), or point transcription at a cloud Whisper API like [OpenAI](https://platform.openai.com/docs/guides/speech-to-text). Switch per-server in Settings, no sidecar required.
 - **Self-host in one command.** `docker compose up -d` runs the bot, the whisper sidecar, and the dashboard together. No public IP or port forwarding needed.
 - **Searchable history.** `/history`, `/summary`, `/raw`, and full-text `/search` over every past meeting, backed by SQLite FTS5.
+- **Campaign memory.** Group recurring calls (a D&D campaign, a long-running project) into a campaign by linking its voice channel. Parley keeps a living journal (party, NPCs, places, quests, loot, lore) that updates after every session and is fed back into the next session's summary, answers questions across every session with `/ask`, and writes a read-aloud "Previously on…" `/recap`.
 - **Resilient.** A failed track doesn't sink the meeting (per-track error tolerance), the bot recovers from voice disconnects, and failed transcriptions or summaries are retryable with one click from the dashboard (or the CLI).
 - **Auto join/leave.** Joins when 2+ people are talking, leaves when the room empties. Shows `[REC]` in its nickname while recording.
 - **Concurrent meetings.** Records multiple channels/servers at once — no global single-recording limit.
@@ -306,6 +307,10 @@ pm2 save
 | `/history` | List recent meetings with status |
 | `/raw [meeting]` | Dump raw meeting data: metadata, attendees, utterances, summary |
 | `/search <keyword>` | Full-text search across all meeting transcripts |
+| `/ask <question> [campaign]` | Ask a question across every session of a campaign |
+| `/recap [campaign] [sessions]` | "Previously on…" recap of the last session(s), to read at the table |
+| `/journal [campaign]` | Show the campaign journal (party, NPCs, places, quests, loot) |
+| `/campaign create\|link\|list` | Create campaigns and link voice channels to them (admin only) |
 | `/setup` | Configure the bot for this server (admin only) |
 
 **Auto join/leave:** the bot joins automatically when more than one human is in a voice channel and leaves when one or zero remain. Toggle with `/setup autojoin`.

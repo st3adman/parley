@@ -4,10 +4,11 @@ import { api } from '../api.js';
 import { Page, PageHead } from '../components/Page.jsx';
 import { Icon, Empty } from '../components/ui.jsx';
 
-const CATEGORY_ORDER = ['Recording', 'Notes', 'Configuration'];
+const CATEGORY_ORDER = ['Recording', 'Notes', 'Campaigns', 'Configuration'];
 const CATEGORY_META = {
   Recording: { desc: 'Start and stop capturing a voice meeting.' },
   Notes: { desc: 'Read, post, and search your meeting notes.' },
+  Campaigns: { desc: 'Memory across sessions: ask questions, get recaps, read the campaign journal.' },
   Configuration: { desc: 'Set the bot up for your server.' },
 };
 

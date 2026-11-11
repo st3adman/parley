@@ -30,5 +30,18 @@ Rules:
 - If the transcript is short or unclear, still return the JSON with best-effort empty arrays.`;
 
 export function summaryPrompt(meta = {}) {
-  return meta.summaryPrompt ?? SUMMARY_PROMPT;
+  const base = meta.summaryPrompt ?? SUMMARY_PROMPT;
+  return meta.campaignContext ? `${base}${campaignContextBlock(meta.campaignContext)}` : base;
+}
+
+// Background from earlier sessions of the same campaign (the campaign journal).
+// It helps the model resolve names and references, but the notes must still
+// describe only what happens in this transcript.
+export function campaignContextBlock(context) {
+  return `
+
+Background from earlier sessions of this campaign (for reference only — use it to recognise names, places and running plot threads, and to spell names consistently when speech-to-text garbles them; summarise ONLY what happens in the transcript below):
+<campaign_background>
+${context}
+</campaign_background>`;
 }

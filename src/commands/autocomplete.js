@@ -41,6 +41,17 @@ export async function modelChoices(provider, query = '', opts = {}) {
     .map((m) => ({ name: modelChoiceName(m), value: m.id.slice(0, MAX_NAME) }));
 }
 
+// Campaign options: the guild's campaigns (most recently active first) whose
+// name contains what's been typed. The value is the campaign id.
+export function campaignChoices(db, guildId, query = '') {
+  if (!db || !guildId) return [];
+  const q = String(query).toLowerCase();
+  return db.listCampaigns(guildId)
+    .filter((c) => c.name.toLowerCase().includes(q))
+    .slice(0, MAX_CHOICES)
+    .map((c) => ({ name: c.name.slice(0, MAX_NAME), value: String(c.id) }));
+}
+
 /**
  * Answer one autocomplete interaction. Discord allows exactly one response, so
  * a catalog failure still has to send something — an empty list, which leaves
@@ -49,6 +60,9 @@ export async function modelChoices(provider, query = '', opts = {}) {
 export async function handleAutocomplete(interaction, { db, env = envConfig, ...opts } = {}) {
   try {
     const focused = interaction.options.getFocused(true);
+    if (focused.name === 'campaign') {
+      return await interaction.respond(campaignChoices(db, interaction.guildId, focused.value));
+    }
     const cfg = interaction.guildId && db ? getGuildConfig(db, interaction.guildId) : {};
     const provider = providerForOption(focused.name, {
       provider: interaction.options.getString('provider'),

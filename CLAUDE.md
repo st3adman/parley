@@ -25,7 +25,9 @@ Pluggable summarizer (src/adapters/summarizer/): gemini (default), ollama, opena
 
 Storage: src/store/db.js (node:sqlite, FTS5 for /search). Per-guild runtime config in src/store/config.js.
 
-Slash commands: /join /leave /summary /history /search /setup (src/commands/). Auto-join when >1 human, auto-leave when ≤1 (src/voice/decisions.js).
+Campaigns (src/campaign/): cross-session memory. A campaign groups meetings (meetings.campaign_id); voice channels link to one via campaign_channels, so createMeeting files new recordings automatically. After a campaign session is summarized, the orchestrator folds its transcript into the campaign journal (one LLM-rewritten Markdown doc of world state, via the adapter's ask(); meetings.journaled_at marks folded sessions; per-campaign lock + shrinkage guard in journal.js). The journal is passed to summarize() as meta.campaignContext (appended in notes.js summaryPrompt). /ask and /recap (ask.js) build context from journal + numbered session notes + FTS5-matched transcript excerpts — never whole transcripts.
+
+Slash commands: /join /leave /summary /history /search /ask /recap /journal /campaign /setup (src/commands/). Auto-join when >1 human, auto-leave when ≤1 (src/voice/decisions.js).
 
 ## Key conventions / gotchas
 

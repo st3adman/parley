@@ -19,6 +19,7 @@ import { resolveSummaryLanguage } from '../adapters/summarizer/languages.js';
 import { describeSummarizerError } from '../adapters/summarizer/errors.js';
 import { parsePcmName } from '../voice/audio.js';
 import { processMeeting } from './orchestrator.js';
+import { campaignContextFor, foldMeetingIntoJournal } from '../campaign/journal.js';
 
 // Statuses the UI should offer a retry for.
 export const RETRYABLE_STATUSES = new Set(['transcription_failed', 'summary_failed', 'processing', 'recording']);
@@ -62,6 +63,7 @@ export async function retryMeeting(db, meetingId, { dataDir, deliver = null } = 
       attendees: db.listAttendees(meetingId).map((a) => a.display_name),
       summaryLanguage: resolveSummaryLanguage(cfg),
       summaryPrompt: cfg.summaryPrompt,
+      campaignContext: campaignContextFor(db, meeting),
     };
     db.setMeetingStatus(meetingId, 'processing');
     let notes;
@@ -78,6 +80,9 @@ export async function retryMeeting(db, meetingId, { dataDir, deliver = null } = 
     db.seedTodos(meetingId, meeting.guild_id, notes.actionItems || [], meeting.started_at);
     db.setMeetingStatus(meetingId, 'done', new Date().toISOString());
     if (deliver) await deliver(notes, talktime, meta).catch(() => {});
+    // A session that failed earlier never reached its campaign journal.
+    await foldMeetingIntoJournal(db, meetingId, { cfg, summarizer })
+      .catch((err) => console.error(`[retry] meeting ${meetingId}: campaign journal update failed: ${err.message}`));
     return { ok: true, action: 'resummarize', status: 'done' };
   }
 
