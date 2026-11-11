@@ -74,8 +74,8 @@ export default function Meetings() {
   return (
     <Page>
       <PageHead
-        title="Meetings"
-        subtitle={meetings ? `${filtered.length} meeting${filtered.length === 1 ? '' : 's'}` : 'Loading…'}
+        title="Sessions"
+        subtitle={meetings ? `${filtered.length} session${filtered.length === 1 ? '' : 's'}` : 'Loading…'}
         actions={
           <Toggle
             value={view}

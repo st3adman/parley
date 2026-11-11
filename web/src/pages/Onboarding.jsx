@@ -5,7 +5,7 @@ import { ConnectionForm, BotStatusBadge } from '../components/Connection.jsx';
 const STEPS = [
   ['Create a Discord application', <>Open the <a className="text-primary hover:underline" href="https://discord.com/developers/applications" target="_blank" rel="noreferrer">Developer Portal</a>, click <b>New Application</b>, then under <b>Bot</b> press <b>Reset Token</b> to reveal your bot token.</>],
   ['Invite the bot to your server', <>Under <b>OAuth2 → URL Generator</b> select scopes <code className="text-ink-2">bot</code> and <code className="text-ink-2">applications.commands</code>, plus Connect, Speak, Use Voice Activity, Send Messages, Create Public Threads, and Embed Links. Open the URL to add it.</>],
-  ['Paste your credentials here', <>Drop the bot token and your Application (client) ID into the form. Parley connects instantly, no restart.</>],
+  ['Paste your credentials here', <>Drop the bot token and your Application (client) ID into the form. Candlekeep connects instantly, no restart.</>],
 ];
 
 export default function Onboarding() {
@@ -22,11 +22,11 @@ export default function Onboarding() {
         <div className="md:pt-6">
           <div className="flex items-center gap-3 mb-6">
             <Logo size={40} />
-            <span className="font-display text-2xl font-extrabold tracking-tight">Parley</span>
+            <span className="font-display text-2xl font-extrabold tracking-tight">Candlekeep</span>
           </div>
           <h1 className="font-display text-[26px] font-extrabold leading-tight mb-2">Connect your Discord bot</h1>
           <p className="text-muted text-sm leading-relaxed mb-7 max-w-[46ch]">
-            Parley records voice meetings and posts AI notes. It runs entirely on your machine.
+            Candlekeep records voice meetings and posts AI notes. It runs entirely on your machine.
             Connect a Discord bot once to get started.
           </p>
           <ol className="space-y-5">

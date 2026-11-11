@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# ── Parley STT sidecar (faster-whisper + FastAPI) ─────────────────────────────
+# ── Candlekeep STT sidecar (faster-whisper + FastAPI) ─────────────────────────────
 # CPU build by default. Whisper models download on first use into /models
 # (mounted volume) so they survive container restarts.
 FROM python:3.12-slim-bookworm

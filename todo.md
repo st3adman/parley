@@ -1,4 +1,4 @@
-# Parley — session todos
+# Candlekeep — session todos
 
 Source: codebase + UI audit conducted this session. Each item carries file:line pointers and a severity.
 

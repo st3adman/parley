@@ -1,4 +1,4 @@
-// Standalone web server: serves the Parley admin API + built UI against the
+// Standalone web server: serves the Candlekeep admin API + built UI against the
 // existing meetings.db WITHOUT the Discord bot/gateway. Lets us develop and
 // test the dashboard against real data with no token.
 //

@@ -53,7 +53,7 @@ test('OpenRouterSummarizer hits openrouter chat/completions and parses content J
   assert.equal(calledUrl, 'https://openrouter.ai/api/v1/chat/completions');
   assert.equal(calledHeaders.authorization, 'Bearer key');
   assert.equal(calledHeaders['HTTP-Referer'], 'https://github.com/SakethKanchi/parley');
-  assert.equal(calledHeaders['X-Title'], 'Parley');
+  assert.equal(calledHeaders['X-Title'], 'Candlekeep');
 });
 
 test('OpenRouterSummarizer throws clear missing-key error', () => {

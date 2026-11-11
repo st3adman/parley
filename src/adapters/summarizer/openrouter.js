@@ -21,7 +21,7 @@ export class OpenRouterSummarizer {
       'content-type': 'application/json',
       authorization: `Bearer ${this.apiKey}`,
       'HTTP-Referer': 'https://github.com/SakethKanchi/parley',
-      'X-Title': 'Parley',
+      'X-Title': 'Candlekeep',
     };
   }
   async summarize(transcript, meta) {

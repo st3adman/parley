@@ -34,7 +34,7 @@ export default function ForcePasswordChange() {
       <div className="w-full max-w-[400px]">
         <div className="flex items-center justify-center gap-3 mb-8">
           <Logo size={40} />
-          <span className="font-display text-2xl font-extrabold tracking-tight">Parley</span>
+          <span className="font-display text-2xl font-extrabold tracking-tight">Candlekeep</span>
         </div>
         <div className="card p-7">
           <h1 className="font-display text-[22px] font-extrabold leading-tight mb-1">Set a new password</h1>

@@ -294,7 +294,7 @@ function Settings({ campaign, channels, onChange }) {
         {err && <p className="text-sm text-error" role="alert">{err}</p>}
         <div className="pt-4 border-t border-border">
           <button className="btn btn-ghost !py-1.5 !text-error" onClick={() => {
-            if (!window.confirm(`Delete "${campaign.name}"? Its journal is deleted; the recordings stay in Meetings.`)) return;
+            if (!window.confirm(`Delete "${campaign.name}"? Its journal is deleted; the recordings stay in Sessions.`)) return;
             act(async () => { await api.deleteCampaign(campaign.id); navigate('/campaigns'); });
           }}><Icon.Trash width={14} height={14} />Delete campaign</button>
         </div>

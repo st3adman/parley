@@ -31,7 +31,7 @@ export default function Live() {
           <Empty
             icon={Icon.Radio}
             title="Nothing recording right now"
-            body="When Parley joins a voice channel, the live session shows up here with a timer and a one-click stop. Use /join in Discord or join a voice channel with auto-join on."
+            body="When Candlekeep joins a voice channel, the live session shows up here with a timer and a one-click stop. Use /join in Discord or join a voice channel with auto-join on."
           />
         </div>
       ) : (

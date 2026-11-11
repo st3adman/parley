@@ -216,7 +216,7 @@ export default function Account() {
   const { user, refresh } = useAuth();
   return (
     <Page max="720px">
-      <PageHead title="Account" subtitle="Your login and, for admins, who else can access Parley." />
+      <PageHead title="Account" subtitle="Your login and, for admins, who else can access Candlekeep." />
       <div className="space-y-5">
         <PasswordCard user={user} onChanged={refresh} />
         {user?.isAdmin && <UsersCard me={user} />}

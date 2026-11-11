@@ -1,4 +1,4 @@
-// Generates Parley brand art for the README: banner, square logo, and icon.
+// Generates Candlekeep brand art for the README: banner, square logo, and icon.
 // Renders SVG sources -> PNG with sharp. Run: npm run make:art
 // (sharp is resolved from the sibling parley-site install via NODE_PATH if absent here.)
 import sharp from 'sharp';
@@ -38,7 +38,7 @@ const banner = `<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="360
   <rect width="1280" height="360" fill="${BG}"/>
   <rect width="1280" height="360" fill="url(#glow)"/>
   <g>${bBars}${bLine}</g>
-  <text x="${bcx}" y="238" text-anchor="middle" font-family="Space Grotesk, DejaVu Sans, sans-serif" font-size="94" font-weight="700" letter-spacing="-2" fill="${INK}">Parley</text>
+  <text x="${bcx}" y="238" text-anchor="middle" font-family="Space Grotesk, DejaVu Sans, sans-serif" font-size="94" font-weight="700" letter-spacing="-2" fill="${INK}">Candlekeep</text>
   <text x="${bcx}" y="284" text-anchor="middle" font-family="Inter, DejaVu Sans, sans-serif" font-size="27" fill="${MUTED}">Self-hosted Discord meeting notes</text>
   <text x="${bcx}" y="326" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="16" letter-spacing="3" fill="#6F7689">PER-SPEAKER TRANSCRIPTS · LOCAL WHISPER · STRUCTURED AI NOTES</text>
 </svg>`;

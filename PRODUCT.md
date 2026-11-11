@@ -6,11 +6,11 @@ product
 
 ## Users
 
-Discord guild owners and administrators who self-host Parley. They access the admin panel from a desktop browser to configure the bot, review meeting transcripts, manage action items, and search past meetings. They are technical enough to self-host but are in task-completion mode when using this panel — not exploring, not browsing.
+Discord guild owners and administrators who self-host Candlekeep. They access the admin panel from a desktop browser to configure the bot, review meeting transcripts, manage action items, and search past meetings. They are technical enough to self-host but are in task-completion mode when using this panel — not exploring, not browsing.
 
 ## Product Purpose
 
-Parley is a self-hosted Discord meeting notes bot. The web admin panel lets guild owners configure the bot (summarizer model, behavior), browse meeting history and transcripts, manage and filter action-item todos, ask follow-up questions about meetings, and search across all past transcripts. Success: a user finds what they need in one flow without friction.
+Candlekeep is a self-hosted Discord meeting notes bot. The web admin panel lets guild owners configure the bot (summarizer model, behavior), browse meeting history and transcripts, manage and filter action-item todos, ask follow-up questions about meetings, and search across all past transcripts. Success: a user finds what they need in one flow without friction.
 
 ## Brand Personality
 

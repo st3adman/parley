@@ -294,7 +294,7 @@ function ConnectionCard({ sys, onChanged }) {
       <Card title="Connection" desc="Discord bot connection.">
         <p className="text-sm text-muted">
           This dashboard is running in read-only mode (no bot process attached), so the Discord
-          connection is managed elsewhere. Start Parley with <code className="text-ink-2">npm start</code> to
+          connection is managed elsewhere. Start Candlekeep with <code className="text-ink-2">npm start</code> to
           edit it here.
         </p>
         {bot && <div className="mt-2"><BotStatusBadge bot={bot} /></div>}

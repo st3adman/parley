@@ -1,4 +1,4 @@
-# Parley — self-hosted Discord meeting notes
+# Candlekeep — self-hosted Discord meeting notes
 # One command:  docker compose up -d
 #
 # Two services share a private network. The bot talks to the STT sidecar over
@@ -10,7 +10,7 @@ services:
     build:
       context: .
       dockerfile: stt_sidecar/Dockerfile
-    image: parley-sidecar
+    image: candlekeep-sidecar
     restart: unless-stopped
     environment:
       # Pin the whisper size here; the bot also passes a per-guild model.
@@ -43,7 +43,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: parley-bot
+    image: candlekeep-bot
     restart: unless-stopped
     depends_on:
       sidecar:
@@ -58,7 +58,8 @@ services:
       WEB_UI_PORT: "3000"
       WEB_UI_HOST: 0.0.0.0
     volumes:
-      # SQLite db + per-meeting audio.
+      # SQLite db + per-meeting audio. The volume keeps its original name so
+      # existing installs keep their data after the rename to Candlekeep.
       - parley-data:/data
     # Dashboard reachable at http://127.0.0.1:3000 on the HOST only.
     ports:

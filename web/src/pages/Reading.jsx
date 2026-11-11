@@ -253,7 +253,7 @@ function Note({ data, todos, guildId, meetings, refetchTodos, onReload }) {
   return (
     <article className="max-w-[760px] mx-auto pb-12 animate-fade-up">
       <Link to="/meetings" className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-ink mb-5 no-underline">
-        <Icon.Arrow width={14} height={14} className="rotate-180" /> All meetings
+        <Icon.Arrow width={14} height={14} className="rotate-180" /> All sessions
       </Link>
 
       <header>

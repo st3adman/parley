@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# ── Parley bot + web dashboard ────────────────────────────────────────────────
+# ── Candlekeep bot + web dashboard ──────────────────────────────────────────────
 # Multi-stage: build the React UI and compile native deps (@discordjs/opus),
 # then ship a slim runtime. Node 24 LTS ships node:sqlite stable (no flag).
 

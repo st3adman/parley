@@ -13,7 +13,7 @@ export const MAX_NICKNAME = 32 - REC_PREFIX.length;
  */
 export function nicknameFor({ nickname, username, recording }) {
   if (!recording) return nickname || null;
-  const base = (nickname || username || 'Parley').slice(0, MAX_NICKNAME);
+  const base = (nickname || username || 'Candlekeep').slice(0, MAX_NICKNAME);
   return `${REC_PREFIX}${base}`;
 }
 

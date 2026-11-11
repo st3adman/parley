@@ -1,9 +1,9 @@
 <p align="center">
-  <img src="./assets/banner.png" width="820" alt="Parley — self-hosted Discord meeting notes" />
+  <img src="./assets/banner.png" width="820" alt="Candlekeep — self-hosted Discord meeting notes" />
 </p>
 
 <p align="center">
-  <b>Parley</b> records your Discord voice meetings, transcribes them per-speaker on your own machine,
+  <b>Candlekeep</b> records your Discord voice meetings, transcribes them per-speaker on your own machine,
   and posts structured AI meeting notes straight into a thread.
 </p>
 
@@ -31,7 +31,7 @@
 
 <p align="center">
   <a href="https://streamable.com/joqv9e">
-    <img src="./assets/parley-demo-poster.png" width="820" alt="Watch the Parley demo — a live meeting becomes structured notes" />
+    <img src="./assets/parley-demo-poster.png" width="820" alt="Watch the Candlekeep demo — a live meeting becomes structured notes" />
   </a>
 </p>
 
@@ -50,7 +50,7 @@
 Notes land in Discord, but the **self-hosted web admin** is where you live with them: browse every meeting, read full notes, work the action-item list, watch talk-time analytics, search transcripts, and configure the bot from the browser. Dark by default, light when you want it.
 
 <p align="center">
-  <img src="./assets/screenshots/dashboard-dark.webp" width="820" alt="Parley dashboard — meeting counts, activity chart, top speakers, recent meetings" />
+  <img src="./assets/screenshots/dashboard-dark.webp" width="820" alt="Candlekeep dashboard — meeting counts, activity chart, top speakers, recent meetings" />
 </p>
 
 <table>
@@ -115,7 +115,7 @@ A fully self-hosted alternative to Otter/Fathom/Fireflies, built for Discord. Au
 - **Local or cloud speech-to-text.** Run a warm [faster-whisper](https://github.com/SYSTRAN/faster-whisper) sidecar (fully offline, free — **uses your NVIDIA GPU automatically** when available, with CPU fallback, and **batched inference** for 1.7–2.6x throughput), or point transcription at a cloud Whisper API like [OpenAI](https://platform.openai.com/docs/guides/speech-to-text). Switch per-server in Settings, no sidecar required.
 - **Self-host in one command.** `docker compose up -d` runs the bot, the whisper sidecar, and the dashboard together. No public IP or port forwarding needed.
 - **Searchable history.** `/history`, `/summary`, `/raw`, and full-text `/search` over every past meeting, backed by SQLite FTS5.
-- **Campaign memory.** Group recurring calls (a D&D campaign, a long-running project) into a campaign by linking its voice channel. Parley keeps a living journal (party, NPCs, places, quests, loot, lore) that updates after every session and is fed back into the next session's summary, answers questions across every session with `/ask`, and writes a read-aloud "Previously on…" `/recap`.
+- **Campaign memory.** Group recurring calls (a D&D campaign, a long-running project) into a campaign by linking its voice channel. Candlekeep keeps a living journal (party, NPCs, places, quests, loot, lore) that updates after every session and is fed back into the next session's summary, answers questions across every session with `/ask`, and writes a read-aloud "Previously on…" `/recap`.
 - **Resilient.** A failed track doesn't sink the meeting (per-track error tolerance), the bot recovers from voice disconnects, and failed transcriptions or summaries are retryable with one click from the dashboard (or the CLI).
 - **Auto join/leave.** Joins when 2+ people are talking, leaves when the room empties. Puts 🔴 in front of its per-server nickname while recording (e.g. `🔴 st3bot`).
 - **Concurrent meetings.** Records multiple channels/servers at once — no global single-recording limit.
@@ -156,7 +156,7 @@ docker compose up -d --build
 Then open **<http://127.0.0.1:3000>** and follow the first-run wizard:
 
 1. Paste your **Discord bot token** and **Application (client) ID** (the dashboard links you to the right pages).
-2. Parley connects instantly and registers its slash commands — no restart, no editing files.
+2. Candlekeep connects instantly and registers its slash commands — no restart, no editing files.
 3. Add your summarizer key (Gemini's free tier works great) on the Settings page, or pick **Ollama** for a fully offline setup.
 
 That's it. The bot, the local whisper sidecar, and the dashboard all run as containers and restart with your machine. Your data (SQLite db + credentials) lives in a Docker volume and survives upgrades.
@@ -174,7 +174,7 @@ flowchart LR
 
 ## 🌍 Where to host it
 
-Parley's bot connects **out** to Discord over a websocket, so it needs **no public IP, no open ports, and no port forwarding**. That makes it happy almost anywhere that stays on:
+Candlekeep's bot connects **out** to Discord over a websocket, so it needs **no public IP, no open ports, and no port forwarding**. That makes it happy almost anywhere that stays on:
 
 | Option | Good for | Notes |
 |--------|----------|-------|
@@ -190,7 +190,7 @@ Parley's bot connects **out** to Discord over a websocket, so it needs **no publ
 - **Cloud LLM (default):** only the final transcript *text* is sent to Gemini/OpenAI. Easiest, cheapest, great quality.
 - **Fully offline:** run [Ollama](https://ollama.com) (on the host or another box) and select it in Settings. Nothing ever leaves your network.
 
-> **Security:** the dashboard requires a **login**. On first run it seeds a default `admin` / `admin` account — sign in, and Parley **requires you to set a new password before the dashboard unlocks** (the rest of the API is gated until you do). Admins can add more users (username + optional email + password) and reset passwords; any user can change their own. Sensitive operations (API keys, Discord credentials, bot/sidecar control, deleting or merging meetings) are **admin-only**. Login is rate-limited against brute force, requests are same-origin-checked (CSRF), sessions are httpOnly cookies (marked `Secure` over https) that are revoked when a password changes, and passwords are scrypt-hashed (8-char minimum) in the same SQLite db. The server binds `127.0.0.1` by default (and, in Docker, only the host's localhost). To reach it from another machine, tunnel over SSH (`ssh -L 3000:127.0.0.1:3000 user@host`) or front it with a reverse proxy + TLS. Do **not** expose port 3000 to the internet directly.
+> **Security:** the dashboard requires a **login**. On first run it seeds a default `admin` / `admin` account — sign in, and Candlekeep **requires you to set a new password before the dashboard unlocks** (the rest of the API is gated until you do). Admins can add more users (username + optional email + password) and reset passwords; any user can change their own. Sensitive operations (API keys, Discord credentials, bot/sidecar control, deleting or merging meetings) are **admin-only**. Login is rate-limited against brute force, requests are same-origin-checked (CSRF), sessions are httpOnly cookies (marked `Secure` over https) that are revoked when a password changes, and passwords are scrypt-hashed (8-char minimum) in the same SQLite db. The server binds `127.0.0.1` by default (and, in Docker, only the host's localhost). To reach it from another machine, tunnel over SSH (`ssh -L 3000:127.0.0.1:3000 user@host`) or front it with a reverse proxy + TLS. Do **not** expose port 3000 to the internet directly.
 
 ## 📦 Prerequisites
 
@@ -202,7 +202,7 @@ Parley's bot connects **out** to Discord over a websocket, so it needs **no publ
 
 ## 🚀 Installation
 
-> Prefer containers? Skip this and use the [Docker quick start](#-quick-start-docker) above — it bundles Node, Python, ffmpeg, and the sidecar, and you configure Discord from the browser. The steps below are for running Parley directly on the host (development, or if you don't want Docker).
+> Prefer containers? Skip this and use the [Docker quick start](#-quick-start-docker) above — it bundles Node, Python, ffmpeg, and the sidecar, and you configure Discord from the browser. The steps below are for running Candlekeep directly on the host (development, or if you don't want Docker).
 
 ### 1. Clone and install Node dependencies
 
@@ -284,7 +284,7 @@ npm start
 
 > `npm start` loads `.env` automatically via Node's `--env-file` flag (Node 20+). If your shell already has empty `DISCORD_TOKEN=` etc., the `.env` values win.
 
-The bot connects to Discord **and** the web dashboard comes up at **<http://127.0.0.1:3000>** (first login `admin` / `admin`; you'll be required to set a new password before the dashboard unlocks). Haven't set a Discord token yet? Open the dashboard and paste it into the first-run wizard — Parley connects and registers its slash commands live, no restart. Run headless (no dashboard) with `WEB_UI=0 npm start`.
+The bot connects to Discord **and** the web dashboard comes up at **<http://127.0.0.1:3000>** (first login `admin` / `admin`; you'll be required to set a new password before the dashboard unlocks). Haven't set a Discord token yet? Open the dashboard and paste it into the first-run wizard — Candlekeep connects and registers its slash commands live, no restart. Run headless (no dashboard) with `WEB_UI=0 npm start`.
 
 For production, keep both processes alive with a process manager:
 
@@ -365,7 +365,7 @@ Every backend returns the same `{ text, words }` shape with word-level timestamp
 
 ## Web dashboard (local)
 
-Parley ships a full local web dashboard for browsing meetings, reading AI
+Candlekeep ships a full local web dashboard for browsing meetings, reading AI
 notes, working the action-item list, searching transcripts, viewing talk-time
 analytics, **connecting your Discord bot**, and editing per-guild config. With
 Docker it's already running; otherwise build it once and start the bot with it
@@ -378,7 +378,7 @@ Open <http://127.0.0.1:3000>.
 
 **First-run wizard.** If no Discord credentials are set yet, the dashboard opens
 on an onboarding screen instead of crashing: paste your bot token + Application
-ID (and optionally the STT URL) and Parley connects and registers its slash
+ID (and optionally the STT URL) and Candlekeep connects and registers its slash
 commands live, no restart. You can edit the connection any time from
 **Settings → Connection**, which also shows the bot's live status and a
 Reconnect button. Anything you save is written to `.env` (under `DATA_DIR`, so it
@@ -405,7 +405,7 @@ dashboard shows that instead of a Start button.)
 
 **Recover failed meetings without the CLI.** If a meeting fails (the STT sidecar
 was down, or the summarizer hit a transient error), it shows up with a clear
-status and a one-click **Retry** in its reading view. Parley picks the right
+status and a one-click **Retry** in its reading view. Candlekeep picks the right
 recovery automatically: re-summarize when the transcript survived, or
 re-transcribe from the saved audio when it didn't. Each meeting can also be
 **exported** (markdown or JSON — notes plus the full transcript) from its actions

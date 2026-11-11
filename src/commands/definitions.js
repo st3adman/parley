@@ -81,7 +81,7 @@ export function commandsJSON() {
 export const COMMAND_CATALOG = [
   { name: 'join', category: 'Recording', admin: false, args: null,
     summary: 'Join your current voice channel and start recording.',
-    detail: 'Parley joins the voice channel you are in and begins capturing a separate audio track per speaker. While recording, its nickname gets a 🔴 in front (e.g. "🔴 st3bot") — set the nickname per server in /setup or Settings.' },
+    detail: 'Candlekeep joins the voice channel you are in and begins capturing a separate audio track per speaker. While recording, its nickname gets a 🔴 in front (e.g. "🔴 st3bot") — set the nickname per server in /setup or Settings.' },
   { name: 'leave', category: 'Recording', admin: false, args: null,
     summary: 'Stop recording, transcribe, and post the notes.',
     detail: 'Ends the meeting, transcribes every track locally, and posts the structured notes to the configured channel or a thread.' },

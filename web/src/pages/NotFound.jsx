@@ -8,7 +8,7 @@ export default function NotFound() {
       <div className="text-center max-w-[440px]">
         <div className="inline-flex items-center gap-2.5 mb-7">
           <Logo size={34} />
-          <span className="font-display text-xl font-extrabold text-ink tracking-tight">Parley</span>
+          <span className="font-display text-xl font-extrabold text-ink tracking-tight">Candlekeep</span>
         </div>
         <p className="font-display text-[64px] leading-none font-extrabold text-ink/90 tracking-tight">404</p>
         <h1 className="font-display text-[20px] font-bold text-ink mt-3">Page not found</h1>

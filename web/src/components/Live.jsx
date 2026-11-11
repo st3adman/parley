@@ -34,7 +34,7 @@ function StopButton({ channelId, small = false }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
   async function run() {
-    if (!window.confirm('Stop this recording? Parley will leave the channel and post the notes.')) return;
+    if (!window.confirm('Stop this recording? Candlekeep will leave the channel and post the notes.')) return;
     setBusy(true); setErr(null);
     try { await stop(channelId); }
     catch (e) { setErr(e?.message || 'Failed to stop.'); setBusy(false); }

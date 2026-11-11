@@ -1,4 +1,4 @@
-// Headless screenshot helper for iterating on the Parley web UI.
+// Headless screenshot helper for iterating on the Candlekeep web UI.
 //   node scripts/shot.mjs <path> <outfile> [width] [height] [fullPage]
 // e.g. node scripts/shot.mjs / /tmp/home.png 1440 900 full
 import { execFileSync } from 'node:child_process';

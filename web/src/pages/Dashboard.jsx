@@ -84,7 +84,7 @@ export default function Dashboard() {
       <PageHead
         title="Dashboard"
         subtitle={`${stats.totalMeetings} meetings · ${stats.people} people · ${fmtCompact(stats.totalUtterances)} utterances captured`}
-        actions={<Link to="/meetings" className="btn btn-ghost">All meetings <Icon.Arrow width={15} height={15} /></Link>}
+        actions={<Link to="/meetings" className="btn btn-ghost">All sessions <Icon.Arrow width={15} height={15} /></Link>}
       />
 
       {/* Live recordings in progress */}
@@ -113,7 +113,7 @@ export default function Dashboard() {
           <div>
             <SectionHead title="Recent meetings" action={<Link to="/meetings" className="text-xs text-primary font-medium hover:underline">View all</Link>} />
             {recent.length === 0 ? (
-              <div className="card"><Empty icon={Icon.Meetings} title="No meetings yet" body="Recorded meetings will appear here once Parley captures a session." /></div>
+              <div className="card"><Empty icon={Icon.Meetings} title="No meetings yet" body="Recorded meetings will appear here once Candlekeep captures a session." /></div>
             ) : (
               <div className="grid sm:grid-cols-2 gap-4">
                 {recent.map((m) => <MeetingCard key={m.id} m={m} />)}

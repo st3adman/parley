@@ -46,12 +46,12 @@ export const Icon = {
   Shield: (p) => <I {...p}><path d="M12 3l8 3v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z" /></I>,
 };
 
-/* ── Brand mark (the real Parley waveform → note logo) ──────────────────── */
+/* ── Brand mark (the real Candlekeep waveform → note logo) ──────────────────── */
 export function Logo({ size = 32, rounded = true, className = '' }) {
   // Waveform bars (brand blue) condensing into a single note dash (brand green),
   // matching assets/logo.svg. viewBox is the 512 brand canvas.
   return (
-    <svg width={size} height={size} viewBox="0 0 512 512" className={className} role="img" aria-label="Parley">
+    <svg width={size} height={size} viewBox="0 0 512 512" className={className} role="img" aria-label="Candlekeep">
       {rounded && <rect x="6" y="6" width="500" height="500" rx="110" fill="#0A0B0F" />}
       <g stroke="#5865F2" strokeWidth="14" strokeLinecap="round">
         <line x1="140" y1="216" x2="140" y2="296" />
