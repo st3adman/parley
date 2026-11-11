@@ -19,6 +19,7 @@ import { availableSttProviders } from '../adapters/stt/index.js';
 import { requireAdmin } from './auth.js';
 import { campaignContextFor, catchUpJournal, JOURNAL_SECTIONS } from '../campaign/journal.js';
 import { askCampaign, recapCampaign } from '../campaign/ask.js';
+import { campaignMarkdown, transcriptMarkdown } from '../campaign/export.js';
 
 function audioDir(id) {
   return join(env.dataDir, 'audio', String(id));
@@ -149,12 +150,8 @@ export function apiRouter({ db, bot = null, client = null, sidecar = null }) {
       if (summary?.notes) lines.push(renderNotes(summary.notes, summary.talktime || [],
         { channelName: meeting.channel_name, date: meeting.started_at }), '');
       lines.push('## Full transcript', '');
-      for (const u of utterances) {
-        const t = Math.floor((u.start_ms || 0) / 1000);
-        const mm = String(Math.floor(t / 60)).padStart(2, '0');
-        const ss = String(t % 60).padStart(2, '0');
-        lines.push(`**[${mm}:${ss}] ${u.display_name}:** ${u.text}`);
-      }
+      // Times relative to the first line (start_ms is an absolute timestamp).
+      lines.push(...transcriptMarkdown(utterances));
       const md = lines.join('\n');
       res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="meeting-${id}-${date}.md"`);
@@ -568,6 +565,17 @@ export function apiRouter({ db, bot = null, client = null, sidecar = null }) {
     catchUpJournal(db, c.id, { rebuild: !!req.body?.rebuild, env })
       .catch((e) => console.error(`[campaign] journal update for campaign ${c.id} failed: ${e.message}`));
     res.status(202).json({ ok: true, campaign: db.getCampaign(c.id) });
+  });
+
+  // The whole campaign as one Markdown file: journal, then each session's
+  // notes and full transcript.
+  r.get('/campaigns/:id/export', (req, res) => {
+    const c = getCampaignOr404(req, res);
+    if (!c) return;
+    const { filename, markdown } = campaignMarkdown(db, c.id);
+    res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(markdown);
   });
 
   r.post('/campaigns/:id/ask', async (req, res) => {

@@ -3,9 +3,10 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import { useGuild } from '../GuildContext.jsx';
 import { Avatar, AvatarStack, Icon, Empty, TalkBar } from '../components/ui.jsx';
-import { fmtDateLong, fmtTime, fmtDuration, fmtClock, fmtMs, colorOf } from '../lib/format.js';
+import { fmtDateLong, fmtTime, fmtDuration, fmtMs, colorOf } from '../lib/format.js';
 import { useDismissable } from '../hooks/useDismissable.js';
 import Markdown from '../components/Markdown.jsx';
+import Transcript from '../components/Transcript.jsx';
 
 /* ── retry banner (failed / stuck meetings) ───────────────────────────── */
 const STATUS_COPY = {
@@ -93,50 +94,6 @@ function ActionItem({ item, todo, onToggle }) {
         )}
       </div>
     </li>
-  );
-}
-
-/* ── transcript ───────────────────────────────────────────────────────── */
-function Transcript({ utterances }) {
-  const [open, setOpen] = useState(false);
-  const [q, setQ] = useState('');
-  if (!utterances.length) return null;
-
-  const filtered = q.trim()
-    ? utterances.filter((u) => u.text.toLowerCase().includes(q.toLowerCase()))
-    : utterances;
-
-  return (
-    <section className="mt-10 pt-8 border-t border-border">
-      <div className="flex items-center justify-between gap-3 mb-4">
-        <button onClick={() => setOpen((o) => !o)} className="flex items-center gap-2 text-sm font-bold text-ink">
-          <Icon.Chevron width={16} height={16} className={`transition-transform ${open ? 'rotate-90' : ''}`} />
-          Transcript
-          <span className="chip">{utterances.length} lines</span>
-        </button>
-        {open && (
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Find in transcript…"
-            className="input !w-52 !py-1.5 text-[13px]" />
-        )}
-      </div>
-      {open && (
-        <div className="space-y-4">
-          {filtered.length === 0 && <p className="text-sm text-muted">No lines match "{q}".</p>}
-          {filtered.map((u, i) => (
-            <div key={i} className="flex items-start gap-3">
-              <Avatar name={u.display_name} size={28} />
-              <div className="min-w-0">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-[13px] font-semibold" style={{ color: colorOf(u.display_name) }}>{u.display_name}</span>
-                  <span className="text-[11px] text-faint tabular-nums">{fmtClock(u.start_ms)}</span>
-                </div>
-                <p className="text-[14px] text-ink-2 leading-relaxed mt-0.5">{u.text}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </section>
   );
 }
 

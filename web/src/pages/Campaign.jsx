@@ -4,6 +4,7 @@ import { api } from '../api.js';
 import { Page, PageHead, SectionHead } from '../components/Page.jsx';
 import { Icon, Empty } from '../components/ui.jsx';
 import Markdown from '../components/Markdown.jsx';
+import Transcript from '../components/Transcript.jsx';
 import { fmtDateShort, fmtRelative } from '../lib/format.js';
 import { useIsAdmin } from './Campaigns.jsx';
 
@@ -302,6 +303,92 @@ function Settings({ campaign, channels, onChange }) {
   );
 }
 
+/* ── Full session log (notes + line-by-line transcript per session) ──── */
+function SessionNotes({ notes }) {
+  const block = (title, items, render) => items?.length > 0 && (
+    <div className="mt-4">
+      <h4 className="text-xs font-bold uppercase tracking-wider text-faint mb-1.5">{title}</h4>
+      <ul className="space-y-1">{items.map((x, i) => <li key={i} className="text-[14px] text-ink-2 leading-relaxed flex gap-2"><span className="text-faint mt-2 h-1 w-1 rounded-full bg-current shrink-0" /><span>{render ? render(x) : x}</span></li>)}</ul>
+    </div>
+  );
+  return (
+    <>
+      {notes.tldr && <p className="text-[15px] text-ink leading-relaxed font-medium">{notes.tldr}</p>}
+      {notes.topics?.map((t, i) => (
+        <div key={i} className="mt-4 pl-4 border-l-2" style={{ borderColor: 'var(--border-strong)' }}>
+          <h4 className="text-[14.5px] font-semibold text-ink">{t.title}</h4>
+          {t.points?.length > 0 && (
+            <ul className="mt-1.5 space-y-1">{t.points.map((p, j) => <li key={j} className="text-[14px] text-ink-2 leading-relaxed">{p}</li>)}</ul>
+          )}
+        </div>
+      ))}
+      {block('Decisions', notes.decisions)}
+      {block('Open questions', notes.openQuestions)}
+      {block('Action items', notes.actionItems, (a) => <>{a.assignee && <strong className="text-ink">{a.assignee}: </strong>}{a.task}</>)}
+    </>
+  );
+}
+
+function SessionEntry({ session, open, onToggle }) {
+  const [detail, setDetail] = useState(null);
+  const [err, setErr] = useState(null);
+  useEffect(() => {
+    if (!open || detail) return;
+    api.meeting(session.id).then(setDetail).catch((e) => setErr(e?.message || 'Failed to load'));
+  }, [open, detail, session.id]);
+
+  return (
+    <div className="card overflow-hidden">
+      <button onClick={onToggle} className="w-full flex items-start gap-3 p-4 text-left hover:bg-surface-2 transition-colors">
+        <Icon.Chevron width={16} height={16} className={`mt-0.5 shrink-0 text-muted transition-transform ${open ? 'rotate-90' : ''}`} />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold text-ink">Session {session.number} <span className="font-normal text-muted">· {fmtDateShort(session.started_at)}</span></p>
+          {!open && session.tldr && <p className="text-[13px] text-muted line-clamp-1 mt-0.5">{session.tldr}</p>}
+        </div>
+        <Link to={`/meetings/${session.id}`} onClick={(e) => e.stopPropagation()} className="text-xs text-muted hover:text-primary no-underline inline-flex items-center gap-1 shrink-0">
+          Open <Icon.ArrowUpRight width={12} height={12} />
+        </Link>
+      </button>
+      {open && (
+        <div className="px-5 pb-5 pt-1 border-t border-border animate-fade-in">
+          {err ? <p className="text-sm text-error mt-3">{err}</p>
+            : !detail ? <div className="h-24 skeleton rounded-md mt-3" />
+            : (
+              <>
+                <div className="mt-3">
+                  {detail.summary?.notes ? <SessionNotes notes={detail.summary.notes} /> : <p className="text-sm text-muted">No notes for this session.</p>}
+                </div>
+                {detail.utterances?.length > 0
+                  ? <Transcript utterances={detail.utterances} className="mt-6 pt-5 border-t border-border" />
+                  : <p className="text-sm text-muted mt-4">No transcript.</p>}
+              </>
+            )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SessionLog({ sessions }) {
+  const [openIds, setOpenIds] = useState(() => new Set());
+  if (!sessions.length) return null;
+  const allOpen = openIds.size === sessions.length;
+  const toggle = (id) => setOpenIds((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  return (
+    <section className="mt-10">
+      <SectionHead title="Session log" action={
+        <button className="btn btn-ghost !py-1.5" onClick={() => setOpenIds(allOpen ? new Set() : new Set(sessions.map((s) => s.id)))}>
+          {allOpen ? 'Collapse all' : 'Expand all'}
+        </button>
+      } />
+      <p className="text-xs text-muted -mt-1 mb-3">Every session's notes and full transcript, oldest first.</p>
+      <div className="space-y-3">
+        {sessions.map((s) => <SessionEntry key={s.id} session={s} open={openIds.has(s.id)} onToggle={() => toggle(s.id)} />)}
+      </div>
+    </section>
+  );
+}
+
 export default function Campaign() {
   const { id } = useParams();
   const isAdmin = useIsAdmin();
@@ -332,7 +419,13 @@ export default function Campaign() {
         <Icon.Chevron width={12} height={12} className="rotate-180" />Campaigns
       </Link>
       <PageHead title={campaign.name}
-        subtitle={`${sessions.length} session${sessions.length === 1 ? '' : 's'}${channels.length ? ` · recorded in ${channels.map((c) => c.channel_name || c.channel_id).join(', ')}` : ''}`} />
+        subtitle={`${sessions.length} session${sessions.length === 1 ? '' : 's'}${channels.length ? ` · recorded in ${channels.map((c) => c.channel_name || c.channel_id).join(', ')}` : ''}`}
+        actions={(
+          <a href={api.exportCampaignUrl(campaign.id)} download className="btn btn-ghost !py-2 no-underline"
+            title="Journal plus every session's notes and full transcript">
+            <Icon.Download width={15} height={15} />Download .md
+          </a>
+        )} />
 
       <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] gap-6 items-start">
         <div className="space-y-6 min-w-0">
@@ -345,6 +438,8 @@ export default function Campaign() {
           {isAdmin && <Settings campaign={campaign} channels={channels} onChange={load} />}
         </div>
       </div>
+
+      <SessionLog sessions={sessions} />
     </Page>
   );
 }

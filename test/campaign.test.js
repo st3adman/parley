@@ -363,3 +363,32 @@ test('campaign API: journal update runs in the background and refuses to overlap
     assert.equal(res.status, 202);
   } finally { close(); }
 });
+
+test('campaign export: journal, then each session with notes and a relative-time transcript', async () => {
+  const db = openDb(':memory:');
+  const cid = db.createCampaign({ guildId: 'g', name: 'Curse of Strahd!' });
+  db.linkCampaignChannel(cid, { guildId: 'g', channelId: 'vc', channelName: 'dnd' });
+  db.setCampaignJournal(cid, JOURNAL);
+  session(db, { startedAt: '2026-02-01T19:00:00Z', lines: ['Second night.'] });
+  session(db, { startedAt: '2026-01-01T19:00:00Z', lines: ['We roll initiative.', 'The amulet glows red.'] });
+  const { campaignMarkdown } = await import('../src/campaign/export.js');
+  const { filename, markdown: md } = campaignMarkdown(db, cid, { now: new Date('2026-11-10T00:00:00Z') });
+  assert.equal(filename, 'curse-of-strahd-2026-11-10.md');
+  assert.match(md, /^# Curse of Strahd!\n\n_Exported 2026-11-10 · 2 sessions · recorded in #dnd_/);
+  assert.match(md, /## Campaign journal\n\n### Party\n- \*\*Thorin\*\*/); // journal headings demoted
+  assert.ok(md.indexOf('### Session 1 — 2026-01-01') < md.indexOf('### Session 2 — 2026-02-01'));
+  assert.match(md, /\*\*Players:\*\* Alex/);
+  assert.match(md, /\*\*Fight\*\*\n- won/);
+  assert.match(md, /#### Transcript\n\n\*\*\[00:00\] Alex:\*\* We roll initiative\.\n\n\*\*\[00:05\] Alex:\*\* The amulet glows red\./);
+  assert.equal(campaignMarkdown(db, 9999), null);
+
+  const { base, close } = await listen(db);
+  try {
+    const r = await fetch(`${base}/api/campaigns/${cid}/export`);
+    assert.equal(r.status, 200);
+    assert.match(r.headers.get('content-type'), /text\/markdown/);
+    assert.match(r.headers.get('content-disposition'), /attachment; filename="curse-of-strahd-\d{4}-\d{2}-\d{2}\.md"/);
+    assert.match(await r.text(), /The amulet glows red/);
+    assert.equal((await fetch(`${base}/api/campaigns/9999/export`)).status, 404);
+  } finally { close(); }
+});

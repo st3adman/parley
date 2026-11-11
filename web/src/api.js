@@ -64,6 +64,7 @@ export const api = {
   unlinkChannel: (id, channelId) => fetch(`/api/campaigns/${id}/channels/${channelId}`, { method: 'DELETE' }).then(json),
   setMeetingCampaign: (meetingId, campaignId) => fetch(`/api/meetings/${meetingId}/campaign`, jsonBody('PUT', { campaignId })).then(json),
   updateJournal: (id, rebuild = false) => fetch(`/api/campaigns/${id}/journal/update`, jsonBody('POST', { rebuild })).then(json),
+  exportCampaignUrl: (id) => `/api/campaigns/${id}/export`,
   askCampaign: (id, question) => fetch(`/api/campaigns/${id}/ask`, jsonBody('POST', { question })).then(json),
   recapCampaign: (id, sessions) => fetch(`/api/campaigns/${id}/recap`, jsonBody('POST', { sessions })).then(json),
   retryMeeting: (id) => fetch(`/api/meetings/${id}/retry`, { method: 'POST' }).then(json),

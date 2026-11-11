@@ -425,7 +425,10 @@ test('GET /api/meetings/:id/export returns full JSON with all utterances', async
 test('GET /api/meetings/:id/export?format=md returns a markdown download', async () => {
   const db = openDb(':memory:');
   const id = db.createMeeting({ guildId: 'g1', channelId: 'c', channelName: 'planning', startedAt: '2026-01-02T10:00:00Z' });
-  db.addUtterance({ meetingId: id, userId: 'u1', displayName: 'Alice', startMs: 65000, endMs: 66000, text: 'hello world' });
+  // start_ms is an absolute timestamp; the export shows time since the first line.
+  const t0 = Date.parse('2026-01-02T10:00:00Z');
+  db.addUtterance({ meetingId: id, userId: 'u2', displayName: 'Bob', startMs: t0, endMs: t0 + 1000, text: 'first' });
+  db.addUtterance({ meetingId: id, userId: 'u1', displayName: 'Alice', startMs: t0 + 65000, endMs: t0 + 66000, text: 'hello world' });
   db.saveSummary(id, { tldr: 'summary here', actionItems: [] }, [], 'fake:m');
   const { base, close } = await listen(appWith(db));
   try {
