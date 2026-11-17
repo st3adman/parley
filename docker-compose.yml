@@ -28,16 +28,17 @@ services:
     # Not published to the host — only the bot reaches it over the compose network.
     expose:
       - "8000"
-    # GPU transcription (5-15x faster): uncomment the block below. Requires the
-    # NVIDIA Container Toolkit on the host and a CUDA-enabled sidecar image
-    # (cuDNN/cuBLAS); the server auto-falls-back to cpu/int8 if CUDA init fails.
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
+    # GPU transcription (5-15x faster). Requires the NVIDIA Container Toolkit on
+    # the host; cuBLAS/cuDNN come from pip (requirements.txt). The server falls
+    # back to cpu/int8 if CUDA init fails. On a host without an NVIDIA GPU or the
+    # toolkit, Docker refuses to start the container — comment this block out.
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
 
   bot:
     build:
