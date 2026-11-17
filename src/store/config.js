@@ -18,6 +18,9 @@ export const DEFAULTS = {
   summaryPrompt: null,
   // null = the bot's own username. While recording it shows as "🔴 <name>".
   nickname: null,
+  // Keep a mixed .ogg recording of each session (dashboard download + posted
+  // with the notes). Off by default: otherwise audio is deleted once transcribed.
+  keepAudio: false,
 };
 
 const COLS = {
@@ -35,6 +38,7 @@ const COLS = {
   summaryLanguage: 'summary_language',
   summaryPrompt: 'summary_prompt',
   nickname: 'nickname',
+  keepAudio: 'keep_audio',
 };
 
 function fromRow(row) {
@@ -53,6 +57,7 @@ function fromRow(row) {
     summaryLanguage: row.summary_language ?? DEFAULTS.summaryLanguage,
     summaryPrompt: row.summary_prompt ?? DEFAULTS.summaryPrompt,
     nickname: row.nickname ?? DEFAULTS.nickname,
+    keepAudio: row.keep_audio == null ? DEFAULTS.keepAudio : !!row.keep_audio,
   };
 }
 
@@ -69,8 +74,8 @@ export function setGuildConfig(db, guildId, patch) {
   const merged = { ...current, ...safePatch, guildId };
   db.sql.prepare(
     `INSERT OR REPLACE INTO guild_config
-       (guild_id, summarizer_provider, summarizer_model, summarizer_fallback_provider, summarizer_fallback_model, stt_provider, stt_model, whisper_model, notes_channel_id, use_thread, auto_join, language, summary_language, summary_prompt, nickname)
-     VALUES (@guildId, @summarizerProvider, @summarizerModel, @summarizerFallbackProvider, @summarizerFallbackModel, @sttProvider, @sttModel, @whisperModel, @notesChannelId, @useThread, @autoJoin, @language, @summaryLanguage, @summaryPrompt, @nickname)`
+       (guild_id, summarizer_provider, summarizer_model, summarizer_fallback_provider, summarizer_fallback_model, stt_provider, stt_model, whisper_model, notes_channel_id, use_thread, auto_join, language, summary_language, summary_prompt, nickname, keep_audio)
+     VALUES (@guildId, @summarizerProvider, @summarizerModel, @summarizerFallbackProvider, @summarizerFallbackModel, @sttProvider, @sttModel, @whisperModel, @notesChannelId, @useThread, @autoJoin, @language, @summaryLanguage, @summaryPrompt, @nickname, @keepAudio)`
   ).run({
     guildId,
     summarizerProvider: merged.summarizerProvider,
@@ -87,6 +92,7 @@ export function setGuildConfig(db, guildId, patch) {
     summaryLanguage: merged.summaryLanguage,
     summaryPrompt: merged.summaryPrompt,
     nickname: merged.nickname ?? null,
+    keepAudio: merged.keepAudio ? 1 : 0,
   });
   return merged;
 }

@@ -116,6 +116,7 @@ A fully self-hosted alternative to Otter/Fathom/Fireflies, built for Discord. Au
 - **Self-host in one command.** `docker compose up -d` runs the bot, the whisper sidecar, and the dashboard together. No public IP or port forwarding needed.
 - **Searchable history.** `/history`, `/summary`, `/raw`, and full-text `/search` over every past meeting, backed by SQLite FTS5.
 - **Campaign memory.** Group recurring calls (a D&D campaign, a long-running project) into a campaign by linking its voice channel. Candlekeep keeps a living journal (party, NPCs, places, quests, loot, lore) that updates after every session and is fed back into the next session's summary, answers questions across every session with `/ask`, and writes a read-aloud "Previously on…" `/recap`.
+- **Session recordings (optional).** Turn on `keep_audio` and each session is saved as one mixed audio file (Ogg Opus, about 7 MB an hour), posted with the notes in Discord (split into parts to fit the server's upload limit) and playable/downloadable on the dashboard — click a transcript line to jump to that moment.
 - **Resilient.** A failed track doesn't sink the meeting (per-track error tolerance), the bot recovers from voice disconnects, and failed transcriptions or summaries are retryable with one click from the dashboard (or the CLI).
 - **Auto join/leave.** Joins when 2+ people are talking, leaves when the room empties. Puts 🔴 in front of its per-server nickname while recording (e.g. `🔴 st3bot`).
 - **Concurrent meetings.** Records multiple channels/servers at once — no global single-recording limit.
@@ -254,7 +255,7 @@ DATA_DIR=
 
 ### 4. Invite the bot
 
-In the Developer Portal → **OAuth2 → URL Generator**, select scopes `bot` and `applications.commands`. Under **Bot Permissions** select: Connect, Speak, Use Voice Activity, Send Messages, Create Public Threads, Embed Links. Open the generated URL to invite the bot.
+In the Developer Portal → **OAuth2 → URL Generator**, select scopes `bot` and `applications.commands`. Under **Bot Permissions** select: Connect, Speak, Use Voice Activity, Send Messages, Send Messages in Threads, Create Public Threads, Embed Links, Attach Files (for session recordings), Change Nickname. Open the generated URL to invite the bot.
 
 > **No privileged intents required.** The bot runs on the standard `Guilds` and `GuildVoiceStates` intents only — you do **not** need to enable Server Members or Message Content.
 
@@ -329,6 +330,7 @@ pm2 save
 | `notes_channel` | Text channel where notes are posted (defaults to the meeting's channel) |
 | `thread` | Post notes in a thread (default: on) |
 | `autojoin` | Auto-join when 2+ people are in voice |
+| `keep_audio` | Keep a recording of each session: posted with the notes and downloadable from the dashboard (default: off — audio is deleted once transcribed) |
 | `language` | Spoken language (German, English, …) or `auto`-detect |
 | `summary_language` | Language for the notes/summary (default English), or `Match transcription` |
 
@@ -361,6 +363,7 @@ Every backend returns the same `{ text, words }` shape with word-level timestamp
 
 - The bot puts 🔴 in front of its nickname whenever a recording is active, so every member can see it.
 - With the default local sidecar, audio is transcribed **on the machine running the bot** — no audio leaves your network, and with Ollama as the summarizer nothing does at all. If you choose a **cloud** transcription provider (OpenAI), meeting audio is sent to that provider for transcription; only the final transcript text is sent to your chosen summarizer.
+- By default the raw audio is deleted as soon as a session is transcribed and summarized; only the text is kept. With `keep_audio` on, a mixed recording of each session is kept under `DATA_DIR/recordings/` and **posted to the notes channel**, so anyone who can read that channel can download it. Delete a recording from the session's ⋯ menu on the dashboard.
 - Recording people's voices is subject to consent laws that vary by jurisdiction (some require all-party consent). **You are responsible for obtaining consent from all participants.**
 
 ## Web dashboard (local)
@@ -457,6 +460,7 @@ src/
   adapters/                  # stt-client + summarizer/{gemini,ollama,openai,fake}
   store/                     # db (node:sqlite + FTS5), per-guild config, secrets/.env writer
   delivery/                  # notes rendering + Discord posting
+  recording/                 # optional session recordings: mix tracks → Ogg Opus, split/join
   commands/                  # slash command definitions + /setup validation
   web/                       # express api + server (serves web/dist)
 web/                         # React dashboard (Vite + Tailwind)

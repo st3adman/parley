@@ -564,6 +564,8 @@ export default function Setup() {
           <NicknameField value={c.nickname} onSave={(nickname) => save({ nickname })} />
           <Switch checked={c.autoJoin} onChange={(e) => save({ autoJoin: e.target.checked })}
             label="Auto-join voice" desc="Join automatically when two or more people are in a voice channel." />
+          <Switch checked={!!c.keepAudio} onChange={(e) => save({ keepAudio: e.target.checked })}
+            label="Keep session recordings" desc="Save one audio file per session (about 7 MB an hour), post it with the notes in Discord, and offer it for download here. Off: audio is deleted once transcribed." />
         </Card>
       </div>
     </Page>

@@ -85,6 +85,7 @@ export function validateSetup(input, env) {
   if (input.notesChannelId !== undefined) patch.notesChannelId = input.notesChannelId;
   if (input.useThread !== undefined) patch.useThread = !!input.useThread;
   if (input.autoJoin !== undefined) patch.autoJoin = !!input.autoJoin;
+  if (input.keepAudio !== undefined) patch.keepAudio = !!input.keepAudio;
   if (input.language !== undefined) {
     if (!LANGUAGE_CODES.has(input.language)) {
       return { ok: false, error: `Invalid language. Use one of: ${[...LANGUAGE_CODES].join(', ')}.` };

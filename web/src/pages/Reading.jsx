@@ -7,6 +7,7 @@ import { fmtDateLong, fmtTime, fmtDuration, fmtMs, colorOf } from '../lib/format
 import { useDismissable } from '../hooks/useDismissable.js';
 import Markdown from '../components/Markdown.jsx';
 import Transcript from '../components/Transcript.jsx';
+import Recording, { useRecordingSeek } from '../components/Recording.jsx';
 
 /* ── retry banner (failed / stuck meetings) ───────────────────────────── */
 const STATUS_COPY = {
@@ -162,6 +163,12 @@ function MeetingActions({ meeting, meetings }) {
     try { await api.deleteMeeting(meeting.id); navigate('/meetings'); }
     catch (e) { setErr(e?.message || 'Delete failed'); }
   }
+  async function delRecording() {
+    setOpen(false);
+    if (!window.confirm('Delete the audio recording of this session? The notes and transcript stay. This cannot be undone.')) return;
+    try { await api.deleteRecording(meeting.id); navigate(0); }
+    catch (e) { setErr(e?.message || 'Delete failed'); }
+  }
   function toggle(id) { setSources((p) => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; }); }
   async function merge() {
     if (sources.size === 0) return;
@@ -183,10 +190,21 @@ function MeetingActions({ meeting, meetings }) {
             className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-ink hover:bg-surface-2 no-underline">
             <Icon.Download width={15} height={15} /> Export (markdown)
           </a>
+          {meeting.recording_bytes > 0 && (
+            <a href={api.recordingUrl(meeting.id, true)} role="menuitem" onClick={() => setOpen(false)}
+              className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-ink hover:bg-surface-2 no-underline">
+              <Icon.Mic width={15} height={15} /> Download recording
+            </a>
+          )}
           <button role="menuitem" onClick={() => { setMode('pick'); setOpen(false); }} disabled={others.length === 0}
             className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-ink hover:bg-surface-2 disabled:opacity-40">
             <Icon.Merge width={15} height={15} /> Merge another meeting
           </button>
+          {meeting.recording_bytes > 0 && (
+            <button role="menuitem" onClick={delRecording} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-error hover:bg-error-soft">
+              <Icon.Trash width={15} height={15} /> Delete recording
+            </button>
+          )}
           <button role="menuitem" onClick={del} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-error hover:bg-error-soft">
             <Icon.Trash width={15} height={15} /> Delete meeting
           </button>
@@ -249,6 +267,7 @@ function Note({ data, todos, guildId, meetings, refetchTodos, onReload }) {
   const duration = fmtDuration(meeting.started_at, meeting.ended_at);
   const meetingTodos = todos.filter((t) => String(t.meeting_id) === String(meeting.id));
   const isFailed = ['transcription_failed', 'summary_failed', 'processing'].includes(meeting.status);
+  const { player, seek } = useRecordingSeek(meeting);
 
   return (
     <article className="max-w-[760px] mx-auto pb-12 animate-fade-up">
@@ -279,6 +298,8 @@ function Note({ data, todos, guildId, meetings, refetchTodos, onReload }) {
       </header>
 
       {isFailed && <RetryBanner meeting={meeting} retry={retry} onDone={onReload} />}
+
+      <Recording ref={player} meeting={meeting} />
 
       {!notes && !isFailed && <p className="text-sm text-muted mt-8">No summary available — status: {meeting.status}.</p>}
 
@@ -367,7 +388,7 @@ function Note({ data, todos, guildId, meetings, refetchTodos, onReload }) {
         </section>
       )}
 
-      <Transcript utterances={utterances ?? []} />
+      <Transcript utterances={utterances ?? []} onSeek={seek} />
       {guildId && <AskBox guildId={guildId} meetingId={meeting.id} />}
       <MeetingNav meetings={meetings} id={meeting.id} />
     </article>

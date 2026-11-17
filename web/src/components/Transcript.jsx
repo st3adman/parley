@@ -4,8 +4,9 @@ import { fmtClock, colorOf } from '../lib/format.js';
 
 // Collapsible, filterable line-by-line transcript. Used on the meeting page and
 // for each session in a campaign's log. start_ms is an absolute timestamp, so
-// times are shown relative to the first line.
-export default function Transcript({ utterances, className = 'mt-10 pt-8 border-t border-border', defaultOpen = false }) {
+// times are shown relative to the first line. With `onSeek`, each time is a
+// button that gets the line's absolute start (to seek a recording).
+export default function Transcript({ utterances, className = 'mt-10 pt-8 border-t border-border', defaultOpen = false, onSeek = null }) {
   const [open, setOpen] = useState(defaultOpen);
   const [q, setQ] = useState('');
   if (!utterances.length) return null;
@@ -37,7 +38,14 @@ export default function Transcript({ utterances, className = 'mt-10 pt-8 border-
               <div className="min-w-0">
                 <div className="flex items-baseline gap-2">
                   <span className="text-[13px] font-semibold" style={{ color: colorOf(u.display_name) }}>{u.display_name}</span>
-                  <span className="text-[11px] text-faint tabular-nums">{fmtClock((u.start_ms ?? 0) - origin)}</span>
+                  {onSeek ? (
+                    <button onClick={() => onSeek(u.start_ms ?? 0)} title="Play from here"
+                      className="text-[11px] text-faint hover:text-accent tabular-nums inline-flex items-center gap-1">
+                      <Icon.Play width={10} height={10} />{fmtClock((u.start_ms ?? 0) - origin)}
+                    </button>
+                  ) : (
+                    <span className="text-[11px] text-faint tabular-nums">{fmtClock((u.start_ms ?? 0) - origin)}</span>
+                  )}
                 </div>
                 <p className="text-[14px] text-ink-2 leading-relaxed mt-0.5">{u.text}</p>
               </div>

@@ -19,6 +19,7 @@ import { renderNotes, chunk } from './delivery/discord-notes.js';
 import { postNotes } from './delivery/post.js';
 import { askCampaign, recapCampaign, resolveCampaign } from './campaign/ask.js';
 import { nicknameFor, isStaleRecordingNickname } from './voice/nickname.js';
+import { saveRecording, postRecording } from './recording/index.js';
 
 export function startBot({ db, audioRoot }) {
   validateEnv(); // throws with a clear message if token/client id are missing
@@ -56,13 +57,28 @@ export function startBot({ db, audioRoot }) {
       const meeting = db.getMeeting(meetingId);
       const cfg = getGuildConfig(db, meeting.guild_id);
       try {
+        let notesTarget = null;
         const result = await processMeeting(db, meetingId, {
           tracks,
           cfg,
           summarizer: getSummarizer(cfg),
-          deliver: async (notes, talktime) => postNotes({ client, meeting, cfg, notes, talktime }),
+          deliver: async (notes, talktime) => { notesTarget = await postNotes({ client, meeting, cfg, notes, talktime }); },
         });
-        // Success: delete the meeting's audio. On failure we keep the PCM for manual retry.
+        // Keep a mixed recording if the server asked for it, and attach it to
+        // the notes thread. Best-effort: the notes are already saved and posted.
+        if (cfg.keepAudio && !result?.empty) {
+          try {
+            const rec = await saveRecording(db, meetingId, tracks, { dataDir: config.dataDir });
+            if (rec && notesTarget) {
+              const guild = client.guilds.cache.get(meeting.guild_id);
+              await postRecording(notesTarget, db.getMeeting(meetingId), { dataDir: config.dataDir, premiumTier: guild?.premiumTier ?? 0 })
+                .catch((e) => console.error(`Meeting ${meetingId}: couldn't post the recording (needs Attach Files): ${e.message}`));
+            }
+          } catch (e) {
+            console.error(`Meeting ${meetingId}: saving the recording failed: ${e.message}`);
+          }
+        }
+        // Success: delete the raw per-speaker audio. On failure we keep the PCM for manual retry.
         await rm(session.audioDir, { recursive: true, force: true }).catch(() => {});
         // Nobody spoke — drop the empty meeting record entirely.
         if (result?.empty) db.deleteMeeting(meetingId);
@@ -451,6 +467,7 @@ export function startBot({ db, audioRoot }) {
           notesChannelId: interaction.options.getChannel('notes_channel')?.id,
           useThread: interaction.options.getBoolean('thread') ?? undefined,
           autoJoin: interaction.options.getBoolean('autojoin') ?? undefined,
+          keepAudio: interaction.options.getBoolean('keep_audio') ?? undefined,
           language: interaction.options.getString('language') ?? undefined,
           summary_language: interaction.options.getString('summary_language') ?? undefined,
           nickname: interaction.options.getString('nickname') ?? undefined,

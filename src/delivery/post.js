@@ -21,4 +21,6 @@ export async function postNotes({ client, meeting, cfg, notes, talktime }) {
       .catch(() => channel);
   }
   for (const part of parts) await target.send(part);
+  // Returned so follow-ups (the session recording) land in the same thread.
+  return target;
 }

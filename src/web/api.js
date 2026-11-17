@@ -20,6 +20,8 @@ import { requireAdmin } from './auth.js';
 import { campaignContextFor, catchUpJournal, JOURNAL_SECTIONS } from '../campaign/journal.js';
 import { askCampaign, recapCampaign } from '../campaign/ask.js';
 import { campaignMarkdown, transcriptMarkdown } from '../campaign/export.js';
+import { recordingPath, recordingFilename, deleteRecording, mergeRecordings } from '../recording/index.js';
+import { existsSync } from 'node:fs';
 
 function audioDir(id) {
   return join(env.dataDir, 'audio', String(id));
@@ -173,7 +175,7 @@ export function apiRouter({ db, bot = null, client = null, sidecar = null }) {
       ? async (notes, talktime) => {
           const cfg = getGuildConfig(db, meeting.guild_id);
           const { postNotes } = await import('../delivery/post.js');
-          await postNotes({ client: c, meeting, cfg, notes, talktime });
+          return postNotes({ client: c, meeting, cfg, notes, talktime });
         }
       : null;
     try {
@@ -185,12 +187,33 @@ export function apiRouter({ db, bot = null, client = null, sidecar = null }) {
     }
   });
 
+  // The session's mixed recording (when the server keeps audio). Served inline
+  // for the dashboard's player (with Range support); ?download=1 saves it.
+  r.get('/meetings/:id/recording', (req, res) => {
+    const id = Number(req.params.id);
+    const meeting = db.getMeeting(id);
+    if (!meeting) return res.status(404).json({ error: 'meeting not found' });
+    const path = recordingPath(env.dataDir, id);
+    if (!existsSync(path)) return res.status(404).json({ error: 'no recording for this session' });
+    res.type('audio/ogg');
+    if (req.query.download) res.attachment(recordingFilename(meeting));
+    res.sendFile(path);
+  });
+
+  r.delete('/meetings/:id/recording', requireAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    if (!db.getMeeting(id)) return res.status(404).json({ error: 'meeting not found' });
+    deleteRecording(db, id, { dataDir: env.dataDir });
+    res.json({ ok: true });
+  });
+
   r.delete('/meetings/:id', requireAdmin, async (req, res) => {
     const id = Number(req.params.id);
     const meeting = db.getMeeting(id);
     if (!meeting) return res.status(404).json({ error: 'meeting not found' });
     db.deleteMeeting(id);
     await rm(audioDir(id), { recursive: true, force: true }).catch(() => {});
+    await rm(recordingPath(env.dataDir, id), { force: true }).catch(() => {});
     res.json({ ok: true });
   });
 
@@ -209,7 +232,17 @@ export function apiRouter({ db, bot = null, client = null, sidecar = null }) {
       if (m.guild_id !== target.guild_id) return res.status(400).json({ error: 'meetings belong to different guilds' });
     }
 
+    // Recordings are joined in the order the sessions started.
+    const byStart = [targetId, ...sourceIds]
+      .map((id) => db.getMeeting(id))
+      .sort((a, b) => String(a.started_at).localeCompare(String(b.started_at)))
+      .map((m) => m.id);
     const merged = db.mergeMeetings(targetId, sourceIds);
+    try {
+      mergeRecordings(db, targetId, byStart.filter((id) => id === targetId || merged.includes(id)), { dataDir: env.dataDir });
+    } catch (e) {
+      console.error(`[merge] joining recordings into meeting ${targetId} failed: ${e.message}`);
+    }
 
     // Re-summarize the now-combined transcript and replace the target's notes.
     const utterances = db.listUtterances(targetId).map((u) => ({

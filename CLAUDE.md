@@ -27,6 +27,8 @@ Storage: src/store/db.js (node:sqlite, FTS5 for /search). Per-guild runtime conf
 
 Campaigns (src/campaign/): cross-session memory. A campaign groups meetings (meetings.campaign_id); voice channels link to one via campaign_channels, so createMeeting files new recordings automatically. After a campaign session is summarized, the orchestrator folds its transcript into the campaign journal (one LLM-rewritten Markdown doc of world state, via the adapter's ask(); meetings.journaled_at marks folded sessions; per-campaign lock + shrinkage guard in journal.js). The journal is passed to summarize() as meta.campaignContext (appended in notes.js summaryPrompt). /ask and /recap (ask.js) build context from journal + numbered session notes + FTS5-matched transcript excerpts — never whole transcripts.
 
+Recordings (src/recording/, opt-in per guild via keepAudio): after a successful pipeline the bot mixes the per-speaker PCM onto one timeline (mix.js, 1-second blocks, yields to the event loop) and encodes Ogg Opus 16 kHz mono 16 kbps with @discordjs/opus (opusscript fallback) — no ffmpeg. ogg.js is a tiny muxer/demuxer used to split for Discord's upload cap (10/50/100 MB by boost tier) and to join recordings on merge, without re-encoding. Files live at DATA_DIR/recordings/<meetingId>.ogg; meetings.recording_bytes/_ms/_start_ms describe them (start_ms lets transcript lines seek the player; NULL after a merge). Raw PCM under audio/ is still deleted after success.
+
 Slash commands: /join /leave /summary /history /search /ask /recap /journal /campaign /setup (src/commands/). Auto-join when >1 human, auto-leave when ≤1 (src/voice/decisions.js).
 
 ## Key conventions / gotchas

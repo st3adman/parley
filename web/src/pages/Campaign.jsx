@@ -5,6 +5,7 @@ import { Page, PageHead, SectionHead } from '../components/Page.jsx';
 import { Icon, Empty } from '../components/ui.jsx';
 import Markdown from '../components/Markdown.jsx';
 import Transcript from '../components/Transcript.jsx';
+import Recording, { useRecordingSeek } from '../components/Recording.jsx';
 import { fmtDateShort, fmtRelative } from '../lib/format.js';
 import { useIsAdmin } from './Campaigns.jsx';
 
@@ -336,6 +337,7 @@ function SessionEntry({ session, open, onToggle }) {
     if (!open || detail) return;
     api.meeting(session.id).then(setDetail).catch((e) => setErr(e?.message || 'Failed to load'));
   }, [open, detail, session.id]);
+  const { player, seek } = useRecordingSeek(detail?.meeting);
 
   return (
     <div className="card overflow-hidden">
@@ -358,8 +360,9 @@ function SessionEntry({ session, open, onToggle }) {
                 <div className="mt-3">
                   {detail.summary?.notes ? <SessionNotes notes={detail.summary.notes} /> : <p className="text-sm text-muted">No notes for this session.</p>}
                 </div>
+                <Recording ref={player} meeting={detail.meeting} className="mt-5" />
                 {detail.utterances?.length > 0
-                  ? <Transcript utterances={detail.utterances} className="mt-6 pt-5 border-t border-border" />
+                  ? <Transcript utterances={detail.utterances} onSeek={seek} className="mt-6 pt-5 border-t border-border" />
                   : <p className="text-sm text-muted mt-4">No transcript.</p>}
               </>
             )}

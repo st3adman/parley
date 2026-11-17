@@ -40,6 +40,9 @@ export const api = {
   meeting: (id) => fetch(`/api/meetings/${id}`).then(json),
   // Export URL for a download link/button (md or json). Not fetched via json().
   exportMeetingUrl: (id, format = 'md') => `/api/meetings/${id}/export?format=${format}`,
+  // Kept session recording (.ogg): inline for the player, or as a download.
+  recordingUrl: (id, download = false) => `/api/meetings/${id}/recording${download ? '?download=1' : ''}`,
+  deleteRecording: (id) => fetch(`/api/meetings/${id}/recording`, { method: 'DELETE' }).then(json),
   todos: (g, { open, assignee } = {}) => {
     const p = new URLSearchParams();
     if (open) p.set('open', '1');

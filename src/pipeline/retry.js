@@ -20,6 +20,7 @@ import { describeSummarizerError } from '../adapters/summarizer/errors.js';
 import { parsePcmName } from '../voice/audio.js';
 import { processMeeting } from './orchestrator.js';
 import { campaignContextFor, foldMeetingIntoJournal } from '../campaign/journal.js';
+import { saveRecording, postRecording } from '../recording/index.js';
 
 // Statuses the UI should offer a retry for.
 export const RETRYABLE_STATUSES = new Set(['transcription_failed', 'summary_failed', 'processing', 'recording']);
@@ -97,7 +98,20 @@ export async function retryMeeting(db, meetingId, { dataDir, deliver = null } = 
     })
     .sort((a, b) => a.startMs - b.startMs);
   try {
-    const { notes, empty } = await processMeeting(db, meetingId, { tracks, cfg, deliver });
+    // `deliver` may return where the notes landed; the recording follows them there.
+    let notesTarget = null;
+    const deliverAndTrack = deliver && (async (...a) => { notesTarget = await deliver(...a); });
+    const { notes, empty } = await processMeeting(db, meetingId, { tracks, cfg, deliver: deliverAndTrack });
+    if (cfg.keepAudio && notes && !empty) {
+      try {
+        const rec = await saveRecording(db, meetingId, tracks, { dataDir });
+        if (rec && notesTarget?.send) {
+          await postRecording(notesTarget, db.getMeeting(meetingId), { dataDir, premiumTier: notesTarget.guild?.premiumTier ?? 0 });
+        }
+      } catch (err) {
+        console.error(`[retry] meeting ${meetingId}: recording failed: ${err.message}`);
+      }
+    }
     // Success (or a confirmed-empty meeting): the PCM has served its purpose, so
     // drop the audio dir. The bot's own finalize does this too, but a retry runs
     // outside that path and would otherwise leak the directory forever.

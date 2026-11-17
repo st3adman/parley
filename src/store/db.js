@@ -38,7 +38,8 @@ CREATE TABLE IF NOT EXISTS guild_config (
   whisper_model TEXT, notes_channel_id TEXT,
   use_thread INTEGER, auto_join INTEGER, language TEXT, summary_language TEXT,
   summary_prompt TEXT,
-  nickname TEXT
+  nickname TEXT,
+  keep_audio INTEGER
 );
 CREATE TABLE IF NOT EXISTS guilds (
   guild_id TEXT PRIMARY KEY,
@@ -104,6 +105,14 @@ export function openDb(path) {
     sql.exec(`ALTER TABLE meetings ADD COLUMN journaled_at TEXT`);
   }
   sql.exec(`CREATE INDEX IF NOT EXISTS meetings_campaign ON meetings(campaign_id)`);
+  // Migration: kept session recordings (DATA_DIR/recordings/<id>.ogg).
+  if (!meetingCols.some((c) => c.name === 'recording_bytes')) {
+    sql.exec(`ALTER TABLE meetings ADD COLUMN recording_bytes INTEGER`);
+    sql.exec(`ALTER TABLE meetings ADD COLUMN recording_ms INTEGER`);
+    // Wall-clock time the recording starts at, so transcript lines can seek
+    // the player. NULL for joined (merged) recordings, which drop the gaps.
+    sql.exec(`ALTER TABLE meetings ADD COLUMN recording_start_ms INTEGER`);
+  }
   // A journal update can't survive a restart; don't leave the UI showing a
   // spinner forever.
   sql.exec(`UPDATE campaigns SET journal_status = 'idle' WHERE journal_status = 'updating'`);
@@ -119,6 +128,10 @@ export function openDb(path) {
   // Migration: per-server bot nickname (shown as "🔴 name" while recording).
   if (!cols.some((c) => c.name === 'nickname')) {
     sql.exec(`ALTER TABLE guild_config ADD COLUMN nickname TEXT`);
+  }
+  // Migration: keep a mixed recording of each session.
+  if (!cols.some((c) => c.name === 'keep_audio')) {
+    sql.exec(`ALTER TABLE guild_config ADD COLUMN keep_audio INTEGER`);
   }
   // Migration: add cloud STT columns to dbs created before they existed.
   if (!cols.some((c) => c.name === 'stt_provider')) {
@@ -486,6 +499,11 @@ export function openDb(path) {
     setJournalStatus(campaignId, status, error = null) {
       sql.prepare(`UPDATE campaigns SET journal_status = ?, journal_error = ? WHERE id = ?`)
         .run(status, error, campaignId);
+    },
+    // null clears it (recording deleted).
+    setMeetingRecording(meetingId, rec) {
+      sql.prepare(`UPDATE meetings SET recording_bytes = ?, recording_ms = ?, recording_start_ms = ? WHERE id = ?`)
+        .run(rec ? rec.bytes : null, rec ? rec.durationMs : null, rec?.startMs ?? null, meetingId);
     },
     markJournaled(meetingId, at = new Date().toISOString()) {
       sql.prepare(`UPDATE meetings SET journaled_at = ? WHERE id = ?`).run(at, meetingId);

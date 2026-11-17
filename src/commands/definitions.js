@@ -62,6 +62,7 @@ export function buildCommands() {
       .addChannelOption((o) => o.setName('notes_channel').setDescription('Where to post notes').addChannelTypes(ChannelType.GuildText))
       .addBooleanOption((o) => o.setName('thread').setDescription('Post notes in a thread'))
       .addBooleanOption((o) => o.setName('autojoin').setDescription('Auto-join when 2+ people are in voice'))
+      .addBooleanOption((o) => o.setName('keep_audio').setDescription('Keep a recording of each session and post it with the notes'))
       .addStringOption((o) => o.setName('language').setDescription('Spoken language (pick German to fix DE/EN mixing)')
         .addChoices(...LANGUAGES.map((l) => ({ name: l.name, value: l.code })), { name: 'Auto-detect', value: 'auto' }))
       .addStringOption((o) => o.setName('nickname').setDescription('Bot nickname in this server; shows "🔴 name" while recording ("none" to reset)').setMaxLength(29))
@@ -113,8 +114,8 @@ export const COMMAND_CATALOG = [
     summary: 'Create campaigns and link voice channels to them (admin only).',
     detail: 'Recordings in a linked voice channel join that campaign automatically, feed its journal, and become searchable with /ask. include_past also adds earlier recordings from the channel (use "Update journal" on the dashboard to fold them in).' },
   { name: 'setup', category: 'Configuration', admin: true,
-    args: '[provider] [model] [fallback_provider] [fallback_model] [stt_provider] [stt_model] [whisper_model] [notes_channel] [thread] [autojoin] [language] [summary_language] [nickname]',
+    args: '[provider] [model] [fallback_provider] [fallback_model] [stt_provider] [stt_model] [whisper_model] [notes_channel] [thread] [autojoin] [keep_audio] [language] [summary_language] [nickname]',
     summary: 'Configure the bot for this server (admin only).',
-    detail: 'Set the summarizer provider/model, an optional fallback summarizer used only when the primary fails (set fallback_provider to "none" to disable), the speech-to-text provider (local sidecar or OpenAI) and model, notes channel, threading, auto-join, languages, and the bot\'s nickname in this server (shown as "🔴 name" while recording). You can also do all of this from this dashboard under Settings.' },
+    detail: 'Set the summarizer provider/model, an optional fallback summarizer used only when the primary fails (set fallback_provider to "none" to disable), the speech-to-text provider (local sidecar or OpenAI) and model, notes channel, threading, auto-join, whether to keep a recording of each session (posted with the notes and downloadable here), languages, and the bot\'s nickname in this server (shown as "🔴 name" while recording). You can also do all of this from this dashboard under Settings.' },
 ];
 ;
